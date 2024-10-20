@@ -309,7 +309,7 @@ jobs:
         # Send Discord message
         curl -H "Content-Type: application/json" \
              -d "$discord_data" \
-             https://discord.com/api/webhooks/1297506303073325137/yRRL-3-w2dvQ3c2VEblaVhAUuVx5QH1KTzQspk7VXQyUZZm-031Jb4pUaeh4JHVJfd-F
+             "https://discord.com/api/webhooks/1297506303073325137/yRRL-3-w2dvQ3c2VEblaVhAUuVx5QH1KTzQspk7VXQyUZZm-031Jb4pUaeh4JHVJfd-F"
         echo "You have only send an embed to discord due to SKIP_BUILD being set to true"
         
         # Upload APK to Discord
