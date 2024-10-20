@@ -8,186 +8,159 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.widget.FrameLayout
-import kotlin.math.absoluteValue
+import kotlin.math.abs
 
 class Swipy @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
+    context: Context,
+    attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
 
-    var dragDivider: Int = 5
-    var vertical = true
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+    private var activePointerId = -1
+    private var isDragging = false
+    private var initialDownY: Float = 0f
+    private var initialMotionY: Float = 0f
+    private var isVertical = true // Use a boolean for orientation
 
-    //public, in case a different sub child needs to be considered
-    var child: View? = getChildAt(0)
+    // Public callbacks for swipe events
+    var onTopSwiped: ((Float) -> Unit)? = null
+    var onBottomSwiped: ((Float) -> Unit)? = null
+    var onLeftSwiped: (() -> Unit)? = null
+    var onRightSwiped: (() -> Unit)? = null
 
-    var topBeingSwiped: ((Float) -> Unit) = {}
-    var onTopSwiped: (() -> Unit) = {}
-    var onBottomSwiped: (() -> Unit) = {}
-    var bottomBeingSwiped: ((Float) -> Unit) = {}
-    var onLeftSwiped: (() -> Unit) = {}
-    var leftBeingSwiped: ((Float) -> Unit) = {}
-    var onRightSwiped: (() -> Unit) = {}
-    var rightBeingSwiped: ((Float) -> Unit) = {}
-
-    companion object {
-        private const val DRAG_RATE = .5f
-        private const val INVALID_POINTER = -1
-    }
-
-    private var touchSlop = ViewConfiguration.get(context).scaledTouchSlop
-
-    private var activePointerId = INVALID_POINTER
-    private var isBeingDragged = false
-    private var initialDown = 0f
-    private var initialMotion = 0f
-
-    enum class ScrollPosition {
-        None,
-        Start,
-        End,
-        Both
-    }
-
-    private var scrollPos = ScrollPosition.None
-
-    private fun setScrollPosition() = child?.run {
-        val (top, bottom) = if (vertical)
-            !canScrollVertically(-1) to !canScrollVertically(1)
-        else
-            !canScrollHorizontally(-1) to !canScrollHorizontally(1)
-
-        scrollPos = when {
-            top && !bottom -> ScrollPosition.Start
-            !top && bottom -> ScrollPosition.End
-            top && bottom -> ScrollPosition.Both
-            else -> ScrollPosition.None
+    private val scrollPosition: ScrollPosition
+        get() {
+            val child = this.child ?: return ScrollPosition.None
+            val canScrollVertically = !child.canScrollVertically(-1) && !child.canScrollVertically(1)
+            val canScrollHorizontally = !child.canScrollHorizontally(-1) && !child.canScrollHorizontally(1)
+            return when {
+                canScrollVertically && !canScrollHorizontally -> if (canScrollVertically(-1)) ScrollPosition.Start else ScrollPosition.End
+                !canScrollVertically && canScrollHorizontally -> if (canScrollHorizontally(-1)) ScrollPosition.Start else ScrollPosition.End
+                canScrollVertically && canScrollHorizontally -> ScrollPosition.Both
+                else -> ScrollPosition.None
+            }
         }
+
+    private enum class ScrollPosition {
+        None, Start, End, Both
     }
 
-
-    private fun canChildScroll(): Boolean {
-        setScrollPosition()
-        return scrollPos == ScrollPosition.None
-    }
-
-    private fun onSecondaryPointerUp(ev: MotionEvent) {
-        val pointerIndex = ev.actionIndex
-        val pointerId = ev.getPointerId(pointerIndex)
+    private fun handlePointerUp(event: MotionEvent) {
+        val pointerIndex = event.actionIndex
+        val pointerId = event.getPointerId(pointerIndex)
         if (pointerId == activePointerId) {
-            val newPointerIndex = if (pointerIndex == 0) 1 else 0
-            activePointerId = ev.getPointerId(newPointerIndex)
+            activePointerId = if (pointerIndex == 0) 1 else 0
         }
     }
 
-    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        val action = ev.actionMasked
-        val pointerIndex: Int
-        if (!isEnabled || canChildScroll()) {
+    override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
+        if (!isEnabled || scrollPosition == ScrollPosition.None) {
             return false
         }
 
+        val action = event.actionMasked
+        val pointerIndex: Int
+
         when (action) {
             MotionEvent.ACTION_DOWN -> {
-                activePointerId = ev.getPointerId(0)
-                isBeingDragged = false
-                pointerIndex = ev.findPointerIndex(activePointerId)
+                activePointerId = event.getPointerId(0)
+                isDragging = false
+                pointerIndex = event.findPointerIndex(activePointerId)
                 if (pointerIndex < 0) {
                     return false
                 }
-
-                initialDown = if (vertical) ev.getY(pointerIndex) else ev.getX(pointerIndex)
+                initialDownY = if (isVertical) event.getY(pointerIndex) else event.getX(pointerIndex)
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (activePointerId == INVALID_POINTER) {
-                    //("Got ACTION_MOVE event but don't have an active pointer id.")
+                if (activePointerId == -1) {
                     return false
                 }
-                pointerIndex = ev.findPointerIndex(activePointerId)
+                pointerIndex = event.findPointerIndex(activePointerId)
                 if (pointerIndex < 0) {
                     return false
                 }
-                val pos = if (vertical) ev.getY(pointerIndex) else ev.getX(pointerIndex)
-                startDragging(pos)
+                val currentY = if (isVertical) event.getY(pointerIndex) else event.getX(pointerIndex)
+                startDragging(currentY)
             }
 
-            MotionEvent.ACTION_POINTER_UP -> onSecondaryPointerUp(ev)
+            MotionEvent.ACTION_POINTER_UP -> handlePointerUp(event)
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                isBeingDragged = false
-                activePointerId = INVALID_POINTER
+                isDragging = false
+                activePointerId = -1
             }
         }
-        return isBeingDragged
+        return isDragging
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(ev: MotionEvent): Boolean {
-        val action = ev.actionMasked
-        val pointerIndex: Int
-        if (!isEnabled || canChildScroll()) {
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!isEnabled || scrollPosition == ScrollPosition.None) {
             return false
         }
+
+        val action = event.actionMasked
+        val pointerIndex: Int
+
         when (action) {
             MotionEvent.ACTION_DOWN -> {
-                activePointerId = ev.getPointerId(0)
-                isBeingDragged = false
+                activePointerId = event.getPointerId(0)
+                isDragging = false
             }
 
             MotionEvent.ACTION_MOVE -> {
-                pointerIndex = ev.findPointerIndex(activePointerId)
+                pointerIndex = event.findPointerIndex(activePointerId)
                 if (pointerIndex < 0) return false
 
-                val pos = if (vertical) ev.getY(pointerIndex) else ev.getX(pointerIndex)
-                startDragging(pos)
+                val currentY = if (isVertical) event.getY(pointerIndex) else event.getX(pointerIndex)
+                startDragging(currentY)
 
-                if (!isBeingDragged) return false
+                if (!isDragging) return false
 
-                val overscroll = getDiff(pos) * DRAG_RATE
-                if (overscroll.absoluteValue <= 0) return false
+                val overscroll = getDiff(currentY) * DRAG_RATE
+                if (abs(overscroll) <= 0) return false
 
                 parent.requestDisallowInterceptTouchEvent(true)
 
-                if (vertical) {
+                if (isVertical) {
                     val dragDistance =
                         Resources.getSystem().displayMetrics.heightPixels / dragDivider
-                    performSwiping(overscroll, dragDistance, topBeingSwiped, bottomBeingSwiped)
+                    performSwiping(overscroll, dragDistance, onTopSwiped, onBottomSwiped)
                 } else {
                     val dragDistance =
                         Resources.getSystem().displayMetrics.widthPixels / dragDivider
-                    performSwiping(overscroll, dragDistance, leftBeingSwiped, rightBeingSwiped)
+                    performSwiping(overscroll, dragDistance, onLeftSwiped, onRightSwiped)
                 }
             }
 
             MotionEvent.ACTION_POINTER_DOWN -> {
-                pointerIndex = ev.actionIndex
+                pointerIndex = event.actionIndex
                 if (pointerIndex < 0) {
-                    //("Got ACTION_POINTER_DOWN event but have an invalid action index.")
                     return false
                 }
-                activePointerId = ev.getPointerId(pointerIndex)
+                activePointerId = event.getPointerId(pointerIndex)
             }
 
-            MotionEvent.ACTION_POINTER_UP -> onSecondaryPointerUp(ev)
+            MotionEvent.ACTION_POINTER_UP -> handlePointerUp(event)
             MotionEvent.ACTION_UP -> {
-                if (vertical) {
-                    topBeingSwiped(0f)
-                    bottomBeingSwiped(0f)
+                if (isVertical) {
+                    onTopSwiped?.invoke(0f)
+                    onBottomSwiped?.invoke(0f)
                 } else {
-                    rightBeingSwiped(0f)
-                    leftBeingSwiped(0f)
+                    onRightSwiped?.invoke(0f)
+                    onLeftSwiped?.invoke(0f)
                 }
-                pointerIndex = ev.findPointerIndex(activePointerId)
+                pointerIndex = event.findPointerIndex(activePointerId)
                 if (pointerIndex < 0) {
-                    //("Got ACTION_UP event but don't have an active pointer id.")
                     return false
                 }
-                if (isBeingDragged) {
-                    val pos = if (vertical) ev.getY(pointerIndex) else ev.getX(pointerIndex)
-                    val overscroll = getDiff(pos) * DRAG_RATE
-                    isBeingDragged = false
+                if (isDragging) {
+                    val currentY = if (isVertical) event.getY(pointerIndex) else event.getX(pointerIndex)
+                    val overscroll = getDiff(currentY) * DRAG_RATE
+                    isDragging = false
                     finishSpinner(overscroll)
                 }
-                activePointerId = INVALID_POINTER
+                activePointerId = -1
                 return false
             }
 
@@ -196,33 +169,33 @@ class Swipy @JvmOverloads constructor(
         return true
     }
 
-    private fun getDiff(pos: Float) = when (scrollPos) {
+    private fun getDiff(pos: Float) = when (scrollPosition) {
         ScrollPosition.None -> 0f
-        ScrollPosition.Start, ScrollPosition.Both -> pos - initialMotion
-        ScrollPosition.End -> initialMotion - pos
+        ScrollPosition.Start, ScrollPosition.Both -> pos - initialMotionY
+        ScrollPosition.End -> initialMotionY - pos
     }
 
     private fun startDragging(pos: Float) {
-        val posDiff = getDiff(pos).absoluteValue
-        if (posDiff > touchSlop && !isBeingDragged) {
-            initialMotion = initialDown + touchSlop
-            isBeingDragged = true
+        val posDiff = abs(getDiff(pos))
+        if (posDiff > touchSlop && !isDragging) {
+            initialMotionY = initialDownY + touchSlop
+            isDragging = true
         }
     }
 
     private fun performSwiping(
         overscrollDistance: Float,
         totalDragDistance: Int,
-        startBlock: (Float) -> Unit,
-        endBlock: (Float) -> Unit
+        startBlock: (Float) -> Unit?,
+        endBlock: (Float) -> Unit?
     ) {
         val distance = overscrollDistance * 2 / totalDragDistance
-        when (scrollPos) {
-            ScrollPosition.Start -> startBlock(distance)
-            ScrollPosition.End -> endBlock(distance)
+        when (scrollPosition) {
+            ScrollPosition.Start -> startBlock?.invoke(distance)
+            ScrollPosition.End -> endBlock?.invoke(distance)
             ScrollPosition.Both -> {
-                startBlock(distance)
-                endBlock(-distance)
+                startBlock?.invoke(distance)
+                endBlock?.invoke(-distance)
             }
             else -> {}
         }
@@ -231,19 +204,20 @@ class Swipy @JvmOverloads constructor(
     private fun performSwipe(
         overscrollDistance: Float,
         totalDragDistance: Int,
-        startBlock: () -> Unit,
-        endBlock: () -> Unit
+        startBlock: () -> Unit?,
+        endBlock: () -> Unit?
     ) {
-        fun check(distance: Float, block: () -> Unit) {
-            if (distance * 2 > totalDragDistance)
-                block.invoke()
+        fun check(distance: Float, block: () -> Unit?) {
+            if (distance * 2 > totalDragDistance) {
+                block?.invoke()
+            }
         }
-        when (scrollPos) {
-            ScrollPosition.Start -> check(overscrollDistance) { startBlock() }
-            ScrollPosition.End -> check(overscrollDistance) { endBlock() }
+        when (scrollPosition) {
+            ScrollPosition.Start -> check(overscrollDistance) { startBlock?.invoke() }
+            ScrollPosition.End -> check(overscrollDistance) { endBlock?.invoke() }
             ScrollPosition.Both -> {
-                check(overscrollDistance) { startBlock() }
-                check(-overscrollDistance) { endBlock() }
+                check(overscrollDistance) { startBlock?.invoke() }
+                check(-overscrollDistance) { endBlock?.invoke() }
             }
 
             else -> {}
@@ -251,7 +225,7 @@ class Swipy @JvmOverloads constructor(
     }
 
     private fun finishSpinner(overscrollDistance: Float) {
-        if (vertical) {
+        if (isVertical) {
             val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
             performSwipe(overscrollDistance, totalDragDistance, onTopSwiped, onBottomSwiped)
         } else {
