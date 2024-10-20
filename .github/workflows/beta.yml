@@ -316,7 +316,7 @@ jobs:
         if [ "$SKIP_BUILD" != "true" ]; then
           curl -F "payload_json=${contentbody}" \
                -F "dantotsu_debug=@app/build/outputs/apk/google/alpha/app-google-alpha.apk" \
-               ${{ https://discord.com/api/webhooks/1297506303073325137/yRRL-3-w2dvQ3c2VEblaVhAUuVx5QH1KTzQspk7VXQyUZZm-031Jb4pUaeh4JHVJfd-F }}
+               "https://discord.com/api/webhooks/1297506303073325137/yRRL-3-w2dvQ3c2VEblaVhAUuVx5QH1KTzQspk7VXQyUZZm-031Jb4pUaeh4JHVJfd-F"
         else
           echo "Skipping APK upload to Discord due to SKIP_BUILD being set to true"
         fi
