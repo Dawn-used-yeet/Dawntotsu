@@ -17,7 +17,7 @@ class Swipy @JvmOverloads constructor(
     var dragDivider: Int = 5
     var vertical = true
 
-    //public, in case a different sub child needs to be considered
+    // public, in case a different sub child needs to be considered
     var child: View? = getChildAt(0)
 
     var topBeingSwiped: ((Float) -> Unit) = {}
@@ -50,11 +50,31 @@ class Swipy @JvmOverloads constructor(
 
     private var scrollPos = ScrollPosition.None
 
-    private fun setScrollPosition() = child?.run {
-        val (top, bottom) = if (vertical)
-            !canScrollVertically(-1) to !canScrollVertically(1)
-        else
-            !canScrollHorizontally(-1) to !canScrollHorizontally(1)
+    // Logic to check if you're on the first page
+    private fun isAtFirstPage(): Boolean {
+        return if (vertical) {
+            // Check if you're at the very top of the scrollable content (for vertical swiping)
+            !child?.canScrollVertically(-1) ?: true
+        } else {
+            // Check if you're at the very left (for horizontal swiping)
+            !child?.canScrollHorizontally(-1) ?: true
+        }
+    }
+
+    // Logic to check if you're on the last page
+    private fun isAtLastPage(): Boolean {
+        return if (vertical) {
+            // Check if you're at the very bottom of the scrollable content (for vertical swiping)
+            !child?.canScrollVertically(1) ?: true
+        } else {
+            // Check if you're at the very right (for horizontal swiping)
+            !child?.canScrollHorizontally(1) ?: true
+        }
+    }
+
+    private fun setScrollPosition() {
+        val top = isAtFirstPage()
+        val bottom = isAtLastPage()
 
         scrollPos = when {
             top && !bottom -> ScrollPosition.Start
@@ -63,7 +83,6 @@ class Swipy @JvmOverloads constructor(
             else -> ScrollPosition.None
         }
     }
-
 
     private fun canChildScroll(): Boolean {
         setScrollPosition()
@@ -94,7 +113,6 @@ class Swipy @JvmOverloads constructor(
                 if (pointerIndex < 0) {
                     return false
                 }
-
                 initialDown = if (vertical) ev.getY(pointerIndex) else ev.getX(pointerIndex)
             }
 
@@ -148,12 +166,10 @@ class Swipy @JvmOverloads constructor(
                 parent.requestDisallowInterceptTouchEvent(true)
 
                 if (vertical) {
-                    val dragDistance =
-                        Resources.getSystem().displayMetrics.heightPixels / dragDivider
+                    val dragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
                     performSwiping(overscroll, dragDistance, topBeingSwiped, bottomBeingSwiped)
                 } else {
-                    val dragDistance =
-                        Resources.getSystem().displayMetrics.widthPixels / dragDivider
+                    val dragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
                     performSwiping(overscroll, dragDistance, leftBeingSwiped, rightBeingSwiped)
                 }
             }
