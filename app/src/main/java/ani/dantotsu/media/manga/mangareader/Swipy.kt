@@ -54,10 +54,10 @@ class Swipy @JvmOverloads constructor(
     private fun isAtFirstPage(): Boolean {
         return if (vertical) {
             // Check if you're at the very top of the scrollable content (for vertical swiping)
-            !child?.canScrollVertically(-1) ?: true
+            !(child?.canScrollVertically(-1) ?: false)
         } else {
             // Check if you're at the very left (for horizontal swiping)
-            !child?.canScrollHorizontally(-1) ?: true
+            !(child?.canScrollHorizontally(-1) ?: false)
         }
     }
 
@@ -65,10 +65,10 @@ class Swipy @JvmOverloads constructor(
     private fun isAtLastPage(): Boolean {
         return if (vertical) {
             // Check if you're at the very bottom of the scrollable content (for vertical swiping)
-            !child?.canScrollVertically(1) ?: true
+            !(child?.canScrollVertically(1) ?: false)
         } else {
             // Check if you're at the very right (for horizontal swiping)
-            !child?.canScrollHorizontally(1) ?: true
+            !(child?.canScrollHorizontally(1) ?: false)
         }
     }
 
