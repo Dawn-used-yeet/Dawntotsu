@@ -83,7 +83,7 @@ import ani.dantotsu.showSystemBarsRetractView
 import ani.dantotsu.snackString
 import ani.dantotsu.themes.ThemeManager
 import ani.dantotsu.tryWith
-import ani.dantotsu.util.customAlertDialog
+import ani.d antotsu.util.customAlertDialog
 import com.alexvasilkov.gestures.views.GestureFrameLayout
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
@@ -218,7 +218,7 @@ class MangaReaderActivity : AppCompatActivity() {
             pageSliderTimer.cancel()
             pageSliderTimer.purge()
             val timerTask: TimerTask = object : TimerTask() {
-                override fun run() {
+                override fun run () {
                     binding.mangaReaderCont.post {
                         sliding = false
                         handleController(false)
@@ -229,8 +229,8 @@ class MangaReaderActivity : AppCompatActivity() {
             pageSliderTimer.schedule(timerTask, 3000)
         }
 
-        binding.mangaReaderSlider.addOnChangeListener { _, value, fromUser ->
-            if (fromUser) {
+        binding.mangaReaderSlider.addOnChangeListener { _, value, fromUser  ->
+            if (fromUser ) {
                 sliding = true
                 if (defaultSettings.layout != PAGED)
                     binding.mangaReaderRecycler.scrollToPosition((value.toInt() - 1) / (dualPage { 2 }
@@ -488,7 +488,7 @@ class MangaReaderActivity : AppCompatActivity() {
         )
 
         //keep screen On
-        if (defaultSettings.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (defaultSettings.keepScreenOn) window.addFlags (WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         binding.mangaReaderPager.unregisterOnPageChangeCallback(pageChangeCallback)
@@ -596,7 +596,7 @@ class MangaReaderActivity : AppCompatActivity() {
                     ?: getString(R.string.no_chapter)
             }
             binding.mangaReaderSwipy.onLeftSwiped = {
-                binding.mangaReaderPreviousChapter.performClick()
+                binding.mangaReaderPreviousChapter.perform Click()
             }
             binding.mangaReaderSwipy.leftBeingSwiped = { value ->
                 binding.LeftSwipeContainer.apply {
@@ -624,13 +624,13 @@ class MangaReaderActivity : AppCompatActivity() {
             val detector = GestureDetectorCompat(this, object : GesturesListener() {
                 override fun onLongPress(e: MotionEvent) {
                     if (binding.mangaReaderRecycler.findChildViewUnder(e.x, e.y).let { childView ->
-                            child ?: return@let false
+                            childView ?: return@let false
                             val pos = binding.mangaReaderRecycler.getChildAdapterPosition(childView)
                             val callback: (ImageViewDialog) -> Unit = { dialog ->
                                 lifecycleScope.launch {
                                     imageAdapter?.loadImage(
                                         pos,
-                                        child as GestureFrameLayout
+                                        childView as GestureFrameLayout
                                     )
                                 }
                                 binding.mangaReaderRecycler.performHapticFeedback(
@@ -665,7 +665,7 @@ class MangaReaderActivity : AppCompatActivity() {
             val manager = PreloadLinearLayoutManager(
                 this,
                 if (defaultSettings.direction == TOP_TO_BOTTOM || defaultSettings.direction == BOTTOM_TO_TOP)
-                    RecyclerView.isVerticalSwipeEnabled
+                    RecyclerView.VERTICAL
                 else
                     RecyclerView.HORIZONTAL,
                 directionRLBT
@@ -732,7 +732,7 @@ class MangaReaderActivity : AppCompatActivity() {
                         smoothScrollBy(500, 0)
                 }
 
-                scrollToPosition(currentPage / (dualPage { 2 } ?: 1) - 1)
+                scrollToPosition(currentPage / (dualPage { 2 } ?:  1) - 1)
             }
         } else {
             binding.mangaReaderRecyclerContainer.visibility = View.GONE
@@ -741,7 +741,10 @@ class MangaReaderActivity : AppCompatActivity() {
                 visibility = View.VISIBLE
                 adapter = imageAdapter
                 layoutDirection =
-                    if (directionRLBT) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+                    if (directionRLBT)
+                        View.LAYOUT_DIRECTION_RTL
+                    else
+                        View.LAYOUT_DIRECTION_LTR
                 orientation =
                     if (defaultSettings.direction == LEFT_TO_RIGHT || defaultSettings.direction == RIGHT_TO_LEFT)
                         ViewPager2.ORIENTATION_HORIZONTAL
@@ -992,7 +995,7 @@ class MangaReaderActivity : AppCompatActivity() {
                     media.selected!!,
                     false
                 )
-                loading = false
+ loading = false
             }
     }
 
@@ -1125,7 +1128,7 @@ class MangaReaderActivity : AppCompatActivity() {
             val threshold = defaultSettings.cropBorderThreshold
             if (defaultSettings.cropBorders) {
                 transforms1.add(RemoveBordersTransformation(true, threshold))
-                transforms1.add(RemoveBordersTransformation(false, threshold))
+                transforms1.add (RemoveBordersTransformation(false, threshold))
                 if (img2 != null) {
                     transforms2.add(RemoveBordersTransformation(true, threshold))
                     transforms2.add(RemoveBordersTransformation(false, threshold))
