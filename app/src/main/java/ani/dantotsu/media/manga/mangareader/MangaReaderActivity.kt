@@ -596,7 +596,7 @@ class MangaReaderActivity : AppCompatActivity() {
                     ?: getString(R.string.no_chapter)
             }
             binding.mangaReaderSwipy.onLeftSwiped = {
-                binding.mangaReaderPreviousChapter.perform Click()
+                binding.mangaReaderPreviousChapter.performClick()
             }
             binding.mangaReaderSwipy.leftBeingSwiped = { value ->
                 binding.LeftSwipeContainer.apply {
