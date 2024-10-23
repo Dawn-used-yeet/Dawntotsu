@@ -623,9 +623,9 @@ class MangaReaderActivity : AppCompatActivity() {
 
             val detector = GestureDetectorCompat(this, object : GesturesListener() {
                 override fun onLongPress(e: MotionEvent) {
-                    if (binding.mangaReaderRecycler.findChildViewUnder(e.x, e.y).let { child ->
+                    if (binding.mangaReaderRecycler.findChildViewUnder(e.x, e.y).let { childView ->
                             child ?: return@let false
-                            val pos = binding.mangaReaderRecycler.getChildAdapterPosition(child)
+                            val pos = binding.mangaReaderRecycler.getChildAdapterPosition(childView)
                             val callback: (ImageViewDialog) -> Unit = { dialog ->
                                 lifecycleScope.launch {
                                     imageAdapter?.loadImage(
@@ -676,7 +676,7 @@ class MangaReaderActivity : AppCompatActivity() {
 
             binding.mangaReaderRecycler.apply {
                 clearOnScrollListeners()
-                binding.mangaReaderSwipy.child = this
+                binding.mangaReaderSwipy.childView = this
                 adapter = imageAdapter
                 layoutManager = manager
                 setOnTouchListener { _, event ->
@@ -737,7 +737,7 @@ class MangaReaderActivity : AppCompatActivity() {
         } else {
             binding.mangaReaderRecyclerContainer.visibility = View.GONE
             binding.mangaReaderPager.apply {
-                binding.mangaReaderSwipy.child = this
+                binding.mangaReaderSwipy.childView = this
                 visibility = View.VISIBLE
                 adapter = imageAdapter
                 layoutDirection =
