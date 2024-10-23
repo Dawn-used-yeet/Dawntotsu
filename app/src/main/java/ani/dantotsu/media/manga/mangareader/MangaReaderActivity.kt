@@ -75,7 +75,7 @@ import ani.dantotsu.settings.CurrentReaderSettings.Directions.TOP_TO_BOTTOM
 import ani.dantotsu.settings.CurrentReaderSettings.DualPageModes.Automatic
 import ani.dantotsu.settings.CurrentReaderSettings.DualPageModes.Force
 import ani.dantotsu.settings.CurrentReaderSettings.DualPageModes.No
-import ani.dantotsu.settings.CurrentReaderSettings.Layouts.CONTINUOUS_PAGED
+import ani.dantotsu.settings.CurrentReaderSettings .Layouts.CONTINUOUS_PAGED
 import ani.dantotsu.settings.CurrentReaderSettings.Layouts.PAGED
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
@@ -83,7 +83,7 @@ import ani.dantotsu.showSystemBarsRetractView
 import ani.dantotsu.snackString
 import ani.dantotsu.themes.ThemeManager
 import ani.dantotsu.tryWith
-import ani.d antotsu.util.customAlertDialog
+import ani.dantotsu.util.customAlertDialog
 import com.alexvasilkov.gestures.views.GestureFrameLayout
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
