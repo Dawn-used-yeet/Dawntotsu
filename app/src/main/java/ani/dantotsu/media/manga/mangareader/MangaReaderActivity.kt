@@ -75,7 +75,7 @@ import ani.dantotsu.settings.CurrentReaderSettings.Directions.TOP_TO_BOTTOM
 import ani.dantotsu.settings.CurrentReaderSettings.DualPageModes.Automatic
 import ani.dantotsu.settings.CurrentReaderSettings.DualPageModes.Force
 import ani.dantotsu.settings.CurrentReaderSettings.DualPageModes.No
-import ani.dantotsu.settings.CurrentReaderSettings .Layouts.CONTINUOUS_PAGED
+import ani.dantotsu.settings.CurrentReaderSettings.Layouts.CONTINUOUS_PAGED
 import ani.dantotsu.settings.CurrentReaderSettings.Layouts.PAGED
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
@@ -94,7 +94,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.ObjectInputStream
+import java .io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.util.Timer
 import java.util.TimerTask
@@ -229,12 +229,12 @@ class MangaReaderActivity : AppCompatActivity() {
             pageSliderTimer.schedule(timerTask, 3000)
         }
 
-        binding.mangaReaderSlider.addOnChangeListener { _, value, fromUser  ->
-            if (fromUser ) {
+        binding.mangaReaderSlider.addOnChangeListener { _, value, fromUser   ->
+            if (fromUser  ) {
                 sliding = true
                 if (defaultSettings.layout != PAGED)
                     binding.mangaReaderRecycler.scrollToPosition((value.toInt() - 1) / (dualPage { 2 }
-                        ?: 1))
+ ?: 1))
                 else
                     if (defaultSettings.direction == CurrentReaderSettings.Directions.BOTTOM_TO_TOP) {
                         binding.mangaReaderPager.currentItem =
@@ -366,7 +366,7 @@ class MangaReaderActivity : AppCompatActivity() {
         }
         binding.mangaReaderPreviousChapter.setOnClickListener {
             if (directionRLBT) {
-                if (chaptersArr.size > currentChapterIndex + 1) progress {
+                if (ch aptersArr.size > currentChapterIndex + 1) progress {
                     change(
                         currentChapterIndex + 1
                     )
@@ -503,7 +503,7 @@ class MangaReaderActivity : AppCompatActivity() {
 
         maxChapterPage = 0
         if (chapImages.isNotEmpty()) {
-            maxChapterPage = chapImages.size.toLong()
+            maxChapterPage = chapImages .size.toLong()
             PrefManager.setCustomVal("${media.id}_${chapter.number}_max", maxChapterPage)
 
             imageAdapter =
@@ -610,7 +610,7 @@ class MangaReaderActivity : AppCompatActivity() {
             binding.mangaReaderSwipy.rightBeingSwiped = { value ->
                 binding.RightSwipeContainer.apply {
                     alpha = value
-                    translationX = width.dp * (1 - min(value, 1f))
+                    translationX = width .dp * (1 - min(value, 1f))
                 }
             }
         }
@@ -704,7 +704,7 @@ class MangaReaderActivity : AppCompatActivity() {
                         }
                         updatePageNumber(
                             manager.findLastVisibleItemPosition().toLong() * (dualPage { 2 }
-                                ?: 1) + 1)
+ ?: 1) + 1)
                         super.onScrolled(v, dx, dy)
                     }
                 })
