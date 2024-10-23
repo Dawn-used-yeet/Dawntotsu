@@ -116,7 +116,9 @@ class Swipy @JvmOverloads constructor(
 
             MotionEvent.ACTION_MOVE -> {
                 val pointerIndex = event.findPointerIndex(activePointerId)
-                if (pointerIndex < 0) return false val currentPosition = if (isVerticalSwipeEnabled) event.getY(pointerIndex) else event.getX(pointerIndex)
+                if (pointerIndex < 0) return false
+
+                val currentPosition = if (isVerticalSwipeEnabled) event.getY(pointerIndex) else event.getX(pointerIndex)
                 startDragging(currentPosition)
 
                 if (!isBeingDragged) return false
