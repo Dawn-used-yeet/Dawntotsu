@@ -366,7 +366,7 @@ class MangaReaderActivity : AppCompatActivity() {
         }
         binding.mangaReaderPreviousChapter.setOnClickListener {
             if (directionRLBT) {
-                if (ch aptersArr.size > currentChapterIndex + 1) progress {
+                if (chaptersArr.size > currentChapterIndex + 1) progress {
                     change(
                         currentChapterIndex + 1
                     )
