@@ -530,7 +530,7 @@ class MangaReaderActivity : AppCompatActivity() {
         }.toInt()
 
         if ((defaultSettings.direction == TOP_TO_BOTTOM || defaultSettings.direction == BOTTOM_TO_TOP)) {
-            binding.mangaReaderSwipy.vertical = true
+            binding.mangaReaderSwipy.isVerticalSwipeEnabled = true
             if (defaultSettings.direction == TOP_TO_BOTTOM) {
                 binding.mangaReaderNextChap.text =
                     chaptersTitleArr.getOrNull(currentChapterIndex + 1) ?: ""
@@ -575,7 +575,7 @@ class MangaReaderActivity : AppCompatActivity() {
                 }
             }
         } else {
-            binding.mangaReaderSwipy.vertical = false
+            binding.mangaReaderSwipy.isVerticalSwipeEnabled = false
             if (defaultSettings.direction == RIGHT_TO_LEFT) {
                 binding.mangaReaderNextChap.text =
                     chaptersTitleArr.getOrNull(currentChapterIndex - 1) ?: ""
@@ -665,7 +665,7 @@ class MangaReaderActivity : AppCompatActivity() {
             val manager = PreloadLinearLayoutManager(
                 this,
                 if (defaultSettings.direction == TOP_TO_BOTTOM || defaultSettings.direction == BOTTOM_TO_TOP)
-                    RecyclerView.VERTICAL
+                    RecyclerView.isVerticalSwipeEnabled
                 else
                     RecyclerView.HORIZONTAL,
                 directionRLBT
