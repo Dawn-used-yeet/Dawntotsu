@@ -2,7 +2,7 @@
    <img src="https://pbxt.replicate.delivery/2PX94viD6lJSDVayQrGyDH7CGu7IjQ6e8HEtOGDeelefXRdOC/out.png" alt="Dantotsu Banner" width=100% >
 </p>
 <p align="center">
-   <img src="https://img.shields.io/badge/platforms-android__ios_windows_linux_macos-blueviolet?style=for-the-badge"/>
+   <img src="https://img.shields.io/badge/platforms-android_ios_windows_linux_macos-blueviolet?style=for-the-badge"/>
    <a href="https://github.com/rebelonion/Dantotsu/releases"><img src="https://img.shields.io/github/downloads/rebelonion/Dantotsu/total?color=%233DDC84&logo=android&logoColor=%23fff&style=for-the-badge"></a>
    <a href="https://discord.gg/eTa2GKtE"><img src="https://img.shields.io/discord/358599430502481920.svg?style=for-the-badge&logo=discord&colorB=7289DA"></a>
 </p>
