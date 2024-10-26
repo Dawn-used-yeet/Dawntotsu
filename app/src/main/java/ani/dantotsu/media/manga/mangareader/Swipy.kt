@@ -79,11 +79,6 @@ class Swipy @JvmOverloads constructor(
     private fun canChildScroll(): Boolean {
         setChildPosition()
         return if (vertical) verticalPos == VerticalPosition.None
-
-
-    private fun canChildScroll(): Boolean {
-        setChildPosition()
-        return if (vertical) verticalPos == VerticalPosition.None
         else horizontalPos == HorizontalPosition.None
     }
 
