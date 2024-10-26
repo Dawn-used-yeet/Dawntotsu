@@ -45,25 +45,29 @@ class Swipy @JvmOverloads constructor(
     private var verticalPos = VerticalPosition.None
 
     private fun setChildPosition() {
-    child?.let {
-        if (vertical) {
-            verticalPos = when {
-                !it.canScrollVertically(1) -> VerticalPosition.Bottom
-                !it.canScrollVertically(-1) -> VerticalPosition.Top
-                else -> VerticalPosition.None
-            }
-        } else {
-            horizontalPos = when {
-                !it.canScrollHorizontally(1) -> HorizontalPosition.Right
-                !it.canScrollHorizontally(-1) -> HorizontalPosition.Left
-                else -> HorizontalPosition.None
+        child?.let {
+            if (vertical) {
+                verticalPos = when {
+                    !it.canScrollVertically(1) && !it.canScrollVertically(-1) -> VerticalPosition.Bottom // Single page case
+                    !it.canScrollVertically(1) -> VerticalPosition.Bottom
+                    !it.canScrollVertically(-1) -> VerticalPosition.Top
+                    else -> VerticalPosition.None
+                }
+            } else {
+                horizontalPos = when {
+                    !it.canScrollHorizontally(1) && !it.canScrollHorizontally(-1) -> HorizontalPosition.Left // Single page case
+                    !it.canScrollHorizontally(1) -> HorizontalPosition.Right
+                    !it.canScrollHorizontally(-1) -> HorizontalPosition.Left
+                    else -> HorizontalPosition.None
+                }
             }
         }
     }
-}
 
-    private fun canChildScroll() = setChildPosition().let {
-        if (vertical) verticalPos == VerticalPosition.None else horizontalPos == HorizontalPosition.None
+    private fun canChildScroll(): Boolean {
+        setChildPosition()
+        return if (vertical) verticalPos == VerticalPosition.None
+        else horizontalPos == HorizontalPosition.None
     }
 
     private fun onSecondaryPointerUp(ev: MotionEvent) {
