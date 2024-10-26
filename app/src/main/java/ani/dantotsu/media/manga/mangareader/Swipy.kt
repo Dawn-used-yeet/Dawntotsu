@@ -8,6 +8,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.widget.FrameLayout
+import kotlin.math.abs
 
 class Swipy @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -189,21 +190,25 @@ class Swipy @JvmOverloads constructor(
         }
     }
 
-    private fun finishSpinner(overscrollDistance: Float) {
-        if (vertical) {
-            val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
-            if (overscrollDistance * 2 > totalDragDistance)
-                if (verticalPos == VerticalPosition.Top)
-                    onTopSwiped.invoke()
-                else
-                    onBottomSwiped.invoke()
-        } else {
-            val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
-            if (overscrollDistance > totalDragDistance)
-                if (horizontalPos == HorizontalPosition.Left)
-                    onLeftSwiped.invoke()
-                else
-                    onRightSwiped.invoke()
+private fun finishSpinner(overscrollDistance: Float) {
+    if (vertical) {
+        val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
+        // Note the overscrollDistance calculation and comparison
+        val swipeDistance = abs(overscrollDistance - initialMotion)
+        if (swipeDistance > totalDragDistance) {
+            if (verticalPos == VerticalPosition.Top)
+                onTopSwiped.invoke()
+            else
+                onBottomSwiped.invoke()
+        }
+    } else {
+        val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
+        val swipeDistance = abs(overscrollDistance - initialMotion)
+        if (swipeDistance > totalDragDistance) {
+            if (horizontalPos == HorizontalPosition.Left)
+                onLeftSwiped.invoke()
+            else
+                onRightSwiped.invoke()
         }
     }
 }
