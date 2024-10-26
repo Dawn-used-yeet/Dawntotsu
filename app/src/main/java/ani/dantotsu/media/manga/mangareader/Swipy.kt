@@ -13,7 +13,7 @@ class Swipy @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
 
-    var dragThreshold = 0.2f // 20% of screen dimension
+    var dragThreshold = 0.2f
     var isVertical = true
 
     private var activeChild: View? = null
@@ -22,16 +22,22 @@ class Swipy @JvmOverloads constructor(
     private var isDragging = false
     private var touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
-    // Callbacks
-    var onSwipeTop: ((progress: Float) -> Unit)? = null
-    var onSwipeBottom: ((progress: Float) -> Unit)? = null
-    var onSwipeLeft: ((progress: Float) -> Unit)? = null
-    var onSwipeRight: ((progress: Float) -> Unit)? = null
+    // Callbacks with original names to match MangaReaderActivity
+    var topBeingSwiped: ((Float) -> Unit) = {}
+    var onTopSwiped: (() -> Unit) = {}
+    var bottomBeingSwiped: ((Float) -> Unit) = {}
+    var onBottomSwiped: (() -> Unit) = {}
+    var leftBeingSwiped: ((Float) -> Unit) = {}
+    var onLeftSwiped: (() -> Unit) = {}
+    var rightBeingSwiped: ((Float) -> Unit) = {}
+    var onRightSwiped: (() -> Unit) = {}
 
-    var onSwipeTopComplete: (() -> Unit)? = null
-    var onSwipeBottomComplete: (() -> Unit)? = null
-    var onSwipeLeftComplete: (() -> Unit)? = null
-    var onSwipeRightComplete: (() -> Unit)? = null
+    // Child property to match original code
+    var child: View?
+        get() = activeChild
+        set(value) {
+            activeChild = value
+        }
 
     private sealed class ScrollState {
         object None : ScrollState()
@@ -39,7 +45,7 @@ class Swipy @JvmOverloads constructor(
         object End : ScrollState()
     }
 
-    private var scrollState = ScrollState.None
+    private var scrollState: ScrollState = ScrollState.None
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         if (!isEnabled) return false
@@ -55,19 +61,15 @@ class Swipy @JvmOverloads constructor(
             MotionEvent.ACTION_MOVE -> {
                 if (scrollState == ScrollState.None) return false
 
-                val dx = ev.x - initialTouchX
-                val dy = ev.y - initialTouchY
-                
-                if (isVertical) {
-                    if (abs(dy) > touchSlop && abs(dy) > abs(dx)) {
-                        isDragging = true
-                        parent.requestDisallowInterceptTouchEvent(true)
-                    }
+                val delta = if (isVertical) {
+                    ev.y - initialTouchY
                 } else {
-                    if (abs(dx) > touchSlop && abs(dx) > abs(dy)) {
-                        isDragging = true
-                        parent.requestDisallowInterceptTouchEvent(true)
-                    }
+                    ev.x - initialTouchX
+                }
+                
+                if (abs(delta) > touchSlop) {
+                    isDragging = true
+                    parent.requestDisallowInterceptTouchEvent(true)
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -141,12 +143,12 @@ class Swipy @JvmOverloads constructor(
     private fun handleSwipeProgress(progress: Float) {
         when (scrollState) {
             ScrollState.Start -> {
-                if (isVertical) onSwipeTop?.invoke(abs(progress))
-                else onSwipeLeft?.invoke(abs(progress))
+                if (isVertical) topBeingSwiped.invoke(abs(progress))
+                else leftBeingSwiped.invoke(abs(progress))
             }
             ScrollState.End -> {
-                if (isVertical) onSwipeBottom?.invoke(abs(progress))
-                else onSwipeRight?.invoke(abs(progress))
+                if (isVertical) bottomBeingSwiped.invoke(abs(progress))
+                else rightBeingSwiped.invoke(abs(progress))
             }
             ScrollState.None -> {}
         }
@@ -156,12 +158,12 @@ class Swipy @JvmOverloads constructor(
         if (abs(progress) >= 1f) {
             when (scrollState) {
                 ScrollState.Start -> {
-                    if (isVertical) onSwipeTopComplete?.invoke()
-                    else onSwipeLeftComplete?.invoke()
+                    if (isVertical) onTopSwiped.invoke()
+                    else onLeftSwiped.invoke()
                 }
                 ScrollState.End -> {
-                    if (isVertical) onSwipeBottomComplete?.invoke()
-                    else onSwipeRightComplete?.invoke()
+                    if (isVertical) onBottomSwiped.invoke()
+                    else onRightSwiped.invoke()
                 }
                 ScrollState.None -> {}
             }
