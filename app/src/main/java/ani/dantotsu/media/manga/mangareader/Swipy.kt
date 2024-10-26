@@ -48,14 +48,26 @@ class Swipy @JvmOverloads constructor(
         child?.let {
             if (vertical) {
                 verticalPos = when {
-                    !it.canScrollVertically(1) && !it.canScrollVertically(-1) -> VerticalPosition.Bottom // Single page case
+                    !it.canScrollVertically(1) && !it.canScrollVertically(-1) -> {
+                        // For single page, check drag direction
+                        if (initialDown > (Resources.getSystem().displayMetrics.heightPixels / 2))
+                            VerticalPosition.Bottom
+                        else
+                            VerticalPosition.Top
+                    }
                     !it.canScrollVertically(1) -> VerticalPosition.Bottom
                     !it.canScrollVertically(-1) -> VerticalPosition.Top
                     else -> VerticalPosition.None
                 }
             } else {
                 horizontalPos = when {
-                    !it.canScrollHorizontally(1) && !it.canScrollHorizontally(-1) -> HorizontalPosition.Left // Single page case
+                    !it.canScrollHorizontally(1) && !it.canScrollHorizontally(-1) -> {
+                        // For single page, check drag direction
+                        if (initialDown > (Resources.getSystem().displayMetrics.widthPixels / 2))
+                            HorizontalPosition.Right
+                        else
+                            HorizontalPosition.Left
+                    }
                     !it.canScrollHorizontally(1) -> HorizontalPosition.Right
                     !it.canScrollHorizontally(-1) -> HorizontalPosition.Left
                     else -> HorizontalPosition.None
@@ -63,6 +75,11 @@ class Swipy @JvmOverloads constructor(
             }
         }
     }
+
+    private fun canChildScroll(): Boolean {
+        setChildPosition()
+        return if (vertical) verticalPos == VerticalPosition.None
+
 
     private fun canChildScroll(): Boolean {
         setChildPosition()
