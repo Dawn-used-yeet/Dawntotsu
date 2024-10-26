@@ -14,7 +14,7 @@ class Swipy @JvmOverloads constructor(
 ) : FrameLayout(context, attrs) {
 
     var dragThreshold = 0.2f
-    var isVertical = true
+    var Vertical = true
 
     private var activeChild: View? = null
     private var initialTouchX = 0f
