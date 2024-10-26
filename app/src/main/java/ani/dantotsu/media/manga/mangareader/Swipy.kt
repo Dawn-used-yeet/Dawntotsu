@@ -50,7 +50,6 @@ class Swipy @JvmOverloads constructor(
             if (vertical) {
                 verticalPos = when {
                     !it.canScrollVertically(1) && !it.canScrollVertically(-1) -> {
-                        // For single page, check drag direction
                         if (initialDown > (Resources.getSystem().displayMetrics.heightPixels / 2))
                             VerticalPosition.Bottom
                         else
@@ -63,7 +62,6 @@ class Swipy @JvmOverloads constructor(
             } else {
                 horizontalPos = when {
                     !it.canScrollHorizontally(1) && !it.canScrollHorizontally(-1) -> {
-                        // For single page, check drag direction
                         if (initialDown > (Resources.getSystem().displayMetrics.widthPixels / 2))
                             HorizontalPosition.Right
                         else
@@ -161,22 +159,20 @@ class Swipy @JvmOverloads constructor(
     }
 
     private fun handleDrag(pos: Float) {
-        val overscroll = (pos - initialMotion) * DRAG_RATE
-        if (overscroll > 0) {
-            parent.requestDisallowInterceptTouchEvent(true)
-            if (vertical) {
-                val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
-                if (verticalPos == VerticalPosition.Top)
-                    topBeingSwiped.invoke(overscroll * 2 / totalDragDistance)
-                else
-                    bottomBeingSwiped.invoke(overscroll * 2 / totalDragDistance)
-            } else {
-                val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
-                if (horizontalPos == HorizontalPosition.Left)
-                    leftBeingSwiped.invoke(overscroll / totalDragDistance)
-                else
-                    rightBeingSwiped.invoke(overscroll / totalDragDistance)
-            }
+        val overscroll = abs((pos - initialMotion) * DRAG_RATE)
+        parent.requestDisallowInterceptTouchEvent(true)
+        if (vertical) {
+            val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
+            if (verticalPos == VerticalPosition.Top)
+                topBeingSwiped.invoke(overscroll * 2 / totalDragDistance)
+            else
+                bottomBeingSwiped.invoke(overscroll * 2 / totalDragDistance)
+        } else {
+            val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
+            if (horizontalPos == HorizontalPosition.Left)
+                leftBeingSwiped.invoke(overscroll / totalDragDistance)
+            else
+                rightBeingSwiped.invoke(overscroll / totalDragDistance)
         }
     }
 
@@ -189,26 +185,26 @@ class Swipy @JvmOverloads constructor(
             leftBeingSwiped.invoke(0f)
         }
     }
-
-private fun finishSpinner(overscrollDistance: Float) {
-    if (vertical) {
-        val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
-        // Note the overscrollDistance calculation and comparison
-        val swipeDistance = abs(overscrollDistance - initialMotion)
-        if (swipeDistance > totalDragDistance) {
-            if (verticalPos == VerticalPosition.Top)
-                onTopSwiped.invoke()
-            else
-                onBottomSwiped.invoke()
-        }
-    } else {
-        val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
-        val swipeDistance = abs(overscrollDistance - initialMotion)
-        if (swipeDistance > totalDragDistance) {
-            if (horizontalPos == HorizontalPosition.Left)
-                onLeftSwiped.invoke()
-            else
-                onRightSwiped.invoke()
+    
+    private fun finishSpinner(overscrollDistance: Float) {
+        if (vertical) {
+            val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
+            val swipeDistance = abs(overscrollDistance - initialMotion)
+            if (swipeDistance > totalDragDistance) {
+                if (verticalPos == VerticalPosition.Top)
+                    onTopSwiped.invoke()
+                else
+                    onBottomSwiped.invoke()
+            }
+        } else {
+            val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
+            val swipeDistance = abs(overscrollDistance - initialMotion)
+            if (swipeDistance > totalDragDistance) {
+                if (horizontalPos == HorizontalPosition.Left)
+                    onLeftSwiped.invoke()
+                else
+                    onRightSwiped.invoke()
+            }
         }
     }
 }
