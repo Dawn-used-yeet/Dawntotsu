@@ -45,17 +45,22 @@ class Swipy @JvmOverloads constructor(
     private var verticalPos = VerticalPosition.None
 
     private fun setChildPosition() {
-        child?.let {
+    child?.let {
+        if (vertical) {
             verticalPos = when {
-                vertical && !canScrollVertically(1) -> VerticalPosition.Bottom
-                vertical && !canScrollVertically(-1) -> VerticalPosition.Top
-                vertical -> VerticalPosition.None
-                !canScrollHorizontally(1) -> HorizontalPosition.Right
-                !canScrollHorizontally(-1) -> HorizontalPosition.Left
+                !it.canScrollVertically(1) -> VerticalPosition.Bottom
+                !it.canScrollVertically(-1) -> VerticalPosition.Top
+                else -> VerticalPosition.None
+            }
+        } else {
+            horizontalPos = when {
+                !it.canScrollHorizontally(1) -> HorizontalPosition.Right
+                !it.canScrollHorizontally(-1) -> HorizontalPosition.Left
                 else -> HorizontalPosition.None
             }
         }
     }
+}
 
     private fun canChildScroll() = setChildPosition().let {
         if (vertical) verticalPos == VerticalPosition.None else horizontalPos == HorizontalPosition.None
