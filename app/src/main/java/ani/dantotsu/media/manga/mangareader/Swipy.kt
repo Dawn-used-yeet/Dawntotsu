@@ -14,7 +14,7 @@ class Swipy @JvmOverloads constructor(
 ) : FrameLayout(context, attrs) {
 
     var dragThreshold = 0.2f
-    var Vertical = true
+    var vertical = true
 
     private var activeChild: View? = null
     private var initialTouchX = 0f
@@ -22,7 +22,6 @@ class Swipy @JvmOverloads constructor(
     private var isDragging = false
     private var touchSlop = ViewConfiguration.get(context).scaledTouchSlop
 
-    // Callbacks with original names to match MangaReaderActivity
     var topBeingSwiped: ((Float) -> Unit) = {}
     var onTopSwiped: (() -> Unit) = {}
     var bottomBeingSwiped: ((Float) -> Unit) = {}
@@ -32,7 +31,6 @@ class Swipy @JvmOverloads constructor(
     var rightBeingSwiped: ((Float) -> Unit) = {}
     var onRightSwiped: (() -> Unit) = {}
 
-    // Child property to match original code
     var child: View?
         get() = activeChild
         set(value) {
@@ -61,7 +59,7 @@ class Swipy @JvmOverloads constructor(
             MotionEvent.ACTION_MOVE -> {
                 if (scrollState == ScrollState.None) return false
 
-                val delta = if (isVertical) {
+                val delta = if (vertical) {
                     ev.y - initialTouchY
                 } else {
                     ev.x - initialTouchX
@@ -89,13 +87,13 @@ class Swipy @JvmOverloads constructor(
             MotionEvent.ACTION_MOVE -> {
                 if (!isDragging) return false
 
-                val delta = if (isVertical) {
+                val delta = if (vertical) {
                     event.y - initialTouchY
                 } else {
                     event.x - initialTouchX
                 }
 
-                val screenSize = if (isVertical) height else width
+                val screenSize = if (vertical) height else width
                 val progress = (delta / (screenSize * dragThreshold)).coerceIn(-1f, 1f)
 
                 handleSwipeProgress(progress)
@@ -103,13 +101,13 @@ class Swipy @JvmOverloads constructor(
             }
             MotionEvent.ACTION_UP -> {
                 if (isDragging) {
-                    val delta = if (isVertical) {
+                    val delta = if (vertical) {
                         event.y - initialTouchY
                     } else {
                         event.x - initialTouchX
                     }
 
-                    val screenSize = if (isVertical) height else width
+                    val screenSize = if (vertical) height else width
                     val progress = delta / (screenSize * dragThreshold)
 
                     handleSwipeComplete(progress)
@@ -126,7 +124,7 @@ class Swipy @JvmOverloads constructor(
     private fun updateScrollState() {
         activeChild?.let { child ->
             scrollState = when {
-                isVertical -> when {
+                vertical -> when {
                     !child.canScrollVertically(-1) -> ScrollState.Start
                     !child.canScrollVertically(1) -> ScrollState.End
                     else -> ScrollState.None
@@ -143,11 +141,11 @@ class Swipy @JvmOverloads constructor(
     private fun handleSwipeProgress(progress: Float) {
         when (scrollState) {
             ScrollState.Start -> {
-                if (isVertical) topBeingSwiped.invoke(abs(progress))
+                if (vertical) topBeingSwiped.invoke(abs(progress))
                 else leftBeingSwiped.invoke(abs(progress))
             }
             ScrollState.End -> {
-                if (isVertical) bottomBeingSwiped.invoke(abs(progress))
+                if (vertical) bottomBeingSwiped.invoke(abs(progress))
                 else rightBeingSwiped.invoke(abs(progress))
             }
             ScrollState.None -> {}
@@ -158,18 +156,17 @@ class Swipy @JvmOverloads constructor(
         if (abs(progress) >= 1f) {
             when (scrollState) {
                 ScrollState.Start -> {
-                    if (isVertical) onTopSwiped.invoke()
+                    if (vertical) onTopSwiped.invoke()
                     else onLeftSwiped.invoke()
                 }
                 ScrollState.End -> {
-                    if (isVertical) onBottomSwiped.invoke()
+                    if (vertical) onBottomSwiped.invoke()
                     else onRightSwiped.invoke()
                 }
                 ScrollState.None -> {}
             }
         }
 
-        // Reset progress
         handleSwipeProgress(0f)
     }
 }
