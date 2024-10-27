@@ -52,15 +52,19 @@ jobs:
         import datetime
         import subprocess
 
-        commits = subprocess.check_output(['git', 'log', '-n', '10', '--pretty=format:• %h: %s']).decode()
+        raw_commits = subprocess.check_output(['git', 'log', '-n', '10', '--pretty=format:• %h: %s']).decode()
+        commits_list = raw_commits.split('\n')
+        discord_commits = '\n> '.join(commits_list)
+        telegram_commits = '\n`'.join(commits_list)
+
         build_time = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
 
-        message_content = f"""🌸 **New Build Available!** 🌸
+        discord_message = f"""🌸 **New Build Available!** 🌸
 
         ⏰ **Built at:** `{build_time}`
 
         📝 **Latest Changes:**
-        > {commits}
+        > {discord_commits}
 
         💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕
 
@@ -68,17 +72,28 @@ jobs:
 
         📦 *APK file attached above uwu~*"""
 
-        discord_message = {
-            "content": message_content
+        telegram_message = f"""🌸 *New Build Available!* 🌸
+
+        ⏰ *Built at:* `{build_time}`
+
+        📝 *Latest Changes:*
+        `{telegram_commits}`
+
+        💕 _Ara ara~ Your favorite onee-san has a fresh build for you_ 💕
+
+        🔗 *My AniList:* https://anilist.co/user/Dawnusedyeet/
+
+        📦 _APK file attached above uwu~_"""
+
+        discord_payload = {
+            "content": discord_message
         }
 
         discord_webhook = "${{ secrets.DISCORD_WEBHOOK }}"
-        requests.post(discord_webhook, json=discord_message)
+        requests.post(discord_webhook, json=discord_payload)
         
         with open('app/build/outputs/apk/google/alpha/app-google-alpha.apk', 'rb') as apk:
             requests.post(discord_webhook, files={'file': apk})
-
-        telegram_message = message_content.replace('**', '*')
 
         telegram_url = f"https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument"
         with open('app/build/outputs/apk/google/alpha/app-google-alpha.apk', 'rb') as apk:
