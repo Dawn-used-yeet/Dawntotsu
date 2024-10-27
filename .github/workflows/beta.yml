@@ -75,7 +75,9 @@ jobs:
         ⏰ Built at: \`${BUILD_TIME}\`
 
         📝 *Latest Changes:*
+        \`\`\`New features
         ${COMMITS}
+        \`\`\`
 
         💕 _Onee san is cooking, Eat up!_ 💕
 
@@ -87,4 +89,3 @@ jobs:
           -F "document=@$APK_PATH" \
           -F "caption=$MESSAGE" \
           -F "parse_mode=Markdown"
-        
