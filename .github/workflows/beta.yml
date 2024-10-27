@@ -48,6 +48,7 @@ jobs:
         MESSAGE="{\"content\":\"🌸 **Ara Ara~** A new build is here! 💕\\n\\n⏰ **Built at:** \`$(date '+%Y-%m-%d %H:%M:%S UTC')\`\\n\\n📱 Your fresh APK awaits~\"}"
         curl -H "Content-Type: application/json" -X POST -d "$MESSAGE" ${{ secrets.DISCORD_WEBHOOK }}
         curl -F "file=@app/build/outputs/apk/google/alpha/app-google-alpha.apk" ${{ secrets.DISCORD_WEBHOOK }}
+
     - name: Upload APK to Telegram
       run: |
         TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
@@ -56,7 +57,7 @@ jobs:
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME="$(date '+%Y-%m-%d %H:%M:%S UTC')"
         
-        MESSAGE="🌸 *New Build Available!* 🌸%0A%0A⏰ Built at: \`${BUILD_TIME}\`%0A%0A📝 *Latest Changes:*%0A${COMMITS}%0A%0A💕 _Ara ara~ Your favorite onee-san has a fresh build for you_ 💕%0A%0A🔗 *My AniList:* https://anilist.co/user/Dawnusedyeet/%0A%0A📦 _APK file attached above uwu~_"
+        MESSAGE="🌸 *New Build Available\!* 🌸%0A%0A⏰ Built at: \`${BUILD_TIME}\`%0A%0A📝 *Latest Changes:*%0A${COMMITS}%0A%0A💕 _Ara ara\~ Your favorite onee\-san has a fresh build for you_ 💕%0A%0A🔗 *My AniList:* https://anilist\.co/user/Dawnusedyeet/%0A%0A📦 _APK file attached above uwu\~_"
         
         curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
           -F "chat_id=${TELEGRAM_CHAT_ID}" \
