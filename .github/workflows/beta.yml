@@ -60,7 +60,7 @@ jobs:
         BRANCH=${{ github.ref }}
         BRANCH=${BRANCH#refs/heads/}
         echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
-        shell: /usr/bin/bash -e {0}
+      shell: /usr/bin/bash -e {0}
       env:
         CI: true
       continue-on-error: true
@@ -154,18 +154,17 @@ jobs:
         
         # Decimal color codes for contributors
         declare -A contributor_colors
-        default_color="#ff25f9"
-        contributor_colors["ibo"]="#ff9b46"
-        contributor_colors["aayush262"]="#5d689d"
-        contributor_colors["Sadwhy"]="#ff7e95"
-        contributor_colors["rebelonion"]="#d4e5ed"
-        hex_to_decimal() { printf '%d' "0x${1#"#"}"; }
+        default_color="16714233"  # Decimal value for #ff25f9
+        contributor_colors["ibo"]="16750406"  # Decimal value for #ff9b46
+        contributor_colors["aayush262"]="6119069"  # Decimal value for #5d689d
+        contributor_colors["Sadwhy"]="16744085"  # Decimal value for #ff7e95
+        contributor_colors["rebelonion"]="13947373"  # Decimal value for #d4e5ed
         
         # Count recent commits and create an associative array
         declare -A recent_commit_counts
         echo "Debug: Processing COMMIT_LOG:"
         echo "$COMMIT_LOG"
-        while read -r count name; do
+        while read -r count name ; do
             recent_commit_counts["$name"]=$count
             echo "Debug: Commit count for $name: $count"
         done < <(echo "$COMMIT_LOG" | sed 's/%0A/\n/g' | grep -oP '(?<=~)[^[]*' | sort | uniq -c | sort -rn)
@@ -209,7 +208,7 @@ jobs:
               top_contributors=("$login")
               top_contributor_count=1
               top_contributor_avatar="$avatar_url"
-              embed_color=$(hex_to_decimal "${contributor_colors[$name]:-$default_color}")
+              embed_color=${contributor_colors[$name]:-$default_color}
             elif [ $commit_count -eq $max_commits ]; then
               top_contributors+=("$login")
               top_contributor_count=$((top_contributor_count + 1))
@@ -267,19 +266,19 @@ jobs:
         fi
 
         # Construct Discord payload
-        discord_data=$(jq -nc \
+        discord_data=$(jq -n \
                       --arg field_value "$commit_messages" \
                       --arg author_value "$developers" \
                       --arg footer_text "Version $VERSION" \
                       --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
                       --arg thumbnail_url "$thumbnail_url" \
-                      --argjson embed_color "$embed_color" \
+                      --arg embed_color "$embed_color" \
                       '{
                         "content": "<@&1225347048321191996>",
                         "embeds": [
                           {
                             "title": "New Alpha-Build dropped",
-                            "color": $embed_color,
+                            "color": ($embed_color | tonumber),
                             "fields": [
                               {
                                 "name": "Commits:",
