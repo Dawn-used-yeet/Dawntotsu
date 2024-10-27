@@ -50,20 +50,18 @@ jobs:
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
         
-        DISCORD_MESSAGE="🌸 **New Build Available!** 🌸
-
-        ⏰ Built at: \`${BUILD_TIME}\`
-
-        📝 **Latest Changes:**
-        ${COMMITS}
-
-        💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕
-
-        🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/
-
-        📦 *APK file attached below uwu~*"
+        # Escape special characters and format JSON properly
+        MESSAGE=$(cat <<EOF
+        {
+          "content": "🌸 **New Build Available!** 🌸\n\n⏰ Built at: \`${BUILD_TIME}\`\n\n📝 **Latest Changes:**\n${COMMITS}\n\n💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕\n\n🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/\n\n📦 *APK file attached below uwu~*"
+        }
+EOF
+        )
         
-        curl -H "Content-Type: application/json" -d "{\"content\":\"$DISCORD_MESSAGE\"}" "$DISCORD_WEBHOOK"
+        # First send the message
+        curl -H "Content-Type: application/json" -d "$MESSAGE" "$DISCORD_WEBHOOK"
+        
+        # Then send the file in a separate request
         curl -F "file=@$APK_PATH" "$DISCORD_WEBHOOK"
 
     - name: Upload APK to Telegram
@@ -88,4 +86,3 @@ jobs:
         📦 _APK file attached below uwu~_"
         
         curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" -F "chat_id=$TELEGRAM_CHAT_ID" -F "document=@$APK_PATH" -F "caption=$TELEGRAM_MESSAGE" -F "parse_mode=Markdown"
-
