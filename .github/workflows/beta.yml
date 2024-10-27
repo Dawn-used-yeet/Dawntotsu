@@ -45,16 +45,8 @@ jobs:
 
     - name: Upload APK to Discord
       run: |
-        DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}
-        APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
-        COMMITS="${{ steps.commits.outputs.commits }}"
-        BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
-        
-        # Send the message first
-        curl -H "Content-Type: application/json" -X POST -d "{\"content\":\"🌸 **New Build Available!** 🌸\\n\\n⏰ Built at: \`${BUILD_TIME}\`\\n\\n📝 **Latest Changes:**\\n${COMMITS}\\n\\n💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕\\n\\n🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/\\n\\n📦 *APK file attached below uwu~*\"}" $DISCORD_WEBHOOK
-        
-        # Send the APK file second
-        curl -F "file=@$APK_PATH" "$DISCORD_WEBHOOK"
+        curl -H "Content-Type: application/json" -X POST -d '{"content":"🌸 **New Build Available!**"}' ${{ secrets.DISCORD_WEBHOOK }}
+        curl -F "file=@app/build/outputs/apk/google/alpha/app-google-alpha.apk" ${{ secrets.DISCORD_WEBHOOK }}
 
     - name: Upload APK to Telegram
       run: |
