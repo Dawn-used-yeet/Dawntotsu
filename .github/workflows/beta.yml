@@ -50,14 +50,21 @@ jobs:
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
         
-        # Create the message JSON
-        MESSAGE="{\"content\":\"🌸 **New Build Available!** 🌸\\n\\n⏰ Built at: \`${BUILD_TIME}\`\\n\\n📝 **Latest Changes:**\\n${COMMITS}\\n\\n💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕\\n\\n🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/\\n\\n📦 *APK file attached below uwu~*\"}"
+        DISCORD_MESSAGE="🌸 **New Build Available!** 🌸
+
+        ⏰ Built at: \`${BUILD_TIME}\`
+
+        📝 **Latest Changes:**
+        ${COMMITS}
+
+        💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕
+
+        🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/
+
+        📦 *APK file attached below uwu~*"
         
-        # First send the message
-        curl -H "Content-Type: application/json" -d "$MESSAGE" "$DISCORD_WEBHOOK"
-        
-        # Then send the file in a separate request
-        curl -F "file=@$APK_PATH" "$DISCORD_WEBHOOK"
+        # Send message and file in a single request using multipart/form-data
+        curl -F "payload_json={\"content\":\"$DISCORD_MESSAGE\"}" -F "file=@$APK_PATH" "$DISCORD_WEBHOOK"
 
     - name: Upload APK to Telegram
       run: |
