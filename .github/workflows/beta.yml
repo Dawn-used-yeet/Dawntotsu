@@ -38,17 +38,19 @@ jobs:
     - name: Get Commit Information
       id: commits
       run: |
-        COMMIT_LOG=$(git log -n 10 --pretty=format:"%h - %s (%an)")
-        echo "COMMIT_LOG=${COMMIT_LOG}" >> $GITHUB_ENV
+        COMMITS=$(git log -n 10 --pretty=format:'%h - %s (%an)' | sed 's/"/\\"/g')
+        echo "commits<<EOF" >> $GITHUB_OUTPUT
+        echo "$COMMITS" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
     - name: Upload APK to Discord
       run: |
         DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
-        COMMIT_LOG="${{ env.COMMIT_LOG }}"
+        COMMITS="${{ steps.commits.outputs.commits }}"
 
         curl -H "Content-Type: application/json" \
-             -d "{\"content\":\"New build available!\n\nCommits:\n$COMMIT_LOG\"}" \
+             -d "{\"content\":\"New build available!\n\nCommits:\n$COMMITS\"}" \
              $DISCORD_WEBHOOK
 
         curl -F "file=@$APK_PATH" \
@@ -60,9 +62,9 @@ jobs:
         TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHANNEL_ID }}
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
-        COMMIT_LOG="${{ env.COMMIT_LOG }}"
+        COMMITS="${{ steps.commits.outputs.commits }}"
 
         curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" \
              -F "chat_id=$TELEGRAM_CHAT_ID" \
              -F "document=@$APK_PATH" \
-             -F "caption=New build available!\n\nCommits:\n$COMMIT_LOG"
+             -F "caption=New build available!\n\nCommits:\n$COMMITS"
