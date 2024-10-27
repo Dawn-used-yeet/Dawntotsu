@@ -1,4 +1,4 @@
-name: Build APK and Notify
+name: Build APK and Send Apk
 
 on:
   push:
