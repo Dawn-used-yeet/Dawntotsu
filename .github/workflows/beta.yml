@@ -38,7 +38,7 @@ jobs:
     - name: Get Commit Information
       id: commits
       run: |
-        COMMITS=$(git log -n 10 --pretty=format:"• [`%h`] %s (%an)%n")
+        COMMITS=$(git log -n 10 --pretty=format:"• [\`%h\`] \"%s\" (%an)%n")
         echo "commits<<EOF" >> $GITHUB_OUTPUT
         echo "$COMMITS" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
@@ -50,28 +50,13 @@ jobs:
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
         
-        # Create message content and escape it properly for JSON
-        MESSAGE_CONTENT=$(cat << EOF
-        🌸 **New Build Available!** 🌸
-
-        ⏰ Built at: \`$BUILD_TIME\`
-
-        📝 **Latest Changes:**
-        $COMMITS
-
-        💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕
-
-        🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/
-
-        📦 *APK file attached below uwu~*
-        EOF
-        )
-        
         # Send the message first
-        curl -H "Content-Type: application/json" \
-          -H "Accept: application/json" \
-          -d "{\"content\":\"$(echo "$MESSAGE_CONTENT" | jq -sR .)\"}" \
-          "$DISCORD_WEBHOOK"
+        curl -X POST -H "Content-Type: application/json" "$DISCORD_WEBHOOK" \
+          -d @- << EOF
+        {
+          "content": "🌸 **New Build Available!** 🌸\n\n⏰ Built at: \`${BUILD_TIME}\`\n\n📝 **Latest Changes:**\n${COMMITS}\n\n💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕\n\n🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/\n\n📦 *APK file attached below uwu~*"
+        }
+        EOF
         
         # Send the APK file second
         curl -F "file=@$APK_PATH" "$DISCORD_WEBHOOK"
