@@ -49,11 +49,12 @@ jobs:
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
         
-        MESSAGE_CONTENT="**New build available!**\n\n**Recent commits:**\n${COMMITS}"
+        # Escape newlines for JSON
+        COMMITS_ESCAPED=$(echo "$COMMITS" | sed ':a;N;$!ba;s/\n/\\n/g')
         
         # Send the message first
         curl -H "Content-Type: application/json" \
-             -d "{\"content\":\"$MESSAGE_CONTENT\"}" \
+             -d "{\"content\":\"**New build available!**\\n\\n**Recent commits:**\\n$COMMITS_ESCAPED\"}" \
              $DISCORD_WEBHOOK
         
         # Then send the APK
@@ -66,8 +67,13 @@ jobs:
         TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHANNEL_ID }}
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
+        
+        MESSAGE="New build available!
 
+Recent commits:
+$COMMITS"
+        
         curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" \
              -F "chat_id=$TELEGRAM_CHAT_ID" \
              -F "document=@$APK_PATH" \
-             -F "caption=New build available!\n\nCommits:\n$COMMITS"
+             -F "caption=$MESSAGE"
