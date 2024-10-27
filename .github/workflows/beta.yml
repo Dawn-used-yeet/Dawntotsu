@@ -50,11 +50,8 @@ jobs:
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
         
-        MESSAGE="🌸 **New Build Available!** 🌸\n\n⏰ Built at: \`${BUILD_TIME}\`\n\n📝 **Latest Changes:**\n${COMMITS}\n\n💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕\n\n🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/\n\n📦 *APK file attached below uwu~*"
-        
         # Send the message first
-        curl -X POST -H "Content-Type: application/json" "$DISCORD_WEBHOOK" \
-          -d "{\"content\":\"$MESSAGE\"}"
+        curl -H "Content-Type: application/json" -X POST -d "{\"content\":\"🌸 **New Build Available!** 🌸\\n\\n⏰ Built at: \`${BUILD_TIME}\`\\n\\n📝 **Latest Changes:**\\n${COMMITS}\\n\\n💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕\\n\\n🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/\\n\\n📦 *APK file attached below uwu~*\"}" $DISCORD_WEBHOOK
         
         # Send the APK file second
         curl -F "file=@$APK_PATH" "$DISCORD_WEBHOOK"
