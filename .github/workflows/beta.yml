@@ -48,13 +48,16 @@ jobs:
         DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
-        
+
+        # Define your custom message
+        CUSTOM_MESSAGE="I believe in onee-san supramacy"
+
         COMMITS_ESCAPED=$(echo "$COMMITS" | sed ':a;N;$!ba;s/\n/\\n/g')
-        
+
         curl -H "Content-Type: application/json" \
-             -d "{\"content\":\"**New build available!**\\n\\n**Recent commits:**\\n$COMMITS_ESCAPED\"}" \
+             -d "{\"content\":\"$CUSTOM_MESSAGE\\n\\n**Recent commits:**\\n$COMMITS_ESCAPED\"}" \
              $DISCORD_WEBHOOK
-        
+
         curl -F "file=@$APK_PATH" \
              $DISCORD_WEBHOOK
 
@@ -64,12 +67,12 @@ jobs:
         TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHANNEL_ID }}
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
-        
-        MESSAGE="New build available!
+
+        MESSAGE="Virus with trojon and stuff."
 
         Recent commits:
         $COMMITS"
-        
+
         curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" \
              -F "chat_id=$TELEGRAM_CHAT_ID" \
              -F "document=@$APK_PATH" \
