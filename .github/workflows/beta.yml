@@ -38,7 +38,7 @@ jobs:
     - name: Get Commit Information
       id: commits
       run: |
-        COMMITS=$(git log -n 10 --pretty=format:"- %h: %s (%an)%n")
+        COMMITS=$(git log -n 10 --pretty=format:"• [`%h`] %s (%an)%n")
         echo "commits<<EOF" >> $GITHUB_OUTPUT
         echo "$COMMITS" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
@@ -48,18 +48,10 @@ jobs:
         DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
-
-        # Define your custom message
-        CUSTOM_MESSAGE="I believe in onee-san supramacy"
-
-        COMMITS_ESCAPED=$(echo "$COMMITS" | sed ':a;N;$!ba;s/\n/\\n/g')
-
-        curl -H "Content-Type: application/json" \
-             -d "{\"content\":\"$CUSTOM_MESSAGE\\n\\n**Recent commits:**\\n$COMMITS_ESCAPED\"}" \
-             $DISCORD_WEBHOOK
-
-        curl -F "file=@$APK_PATH" \
-             $DISCORD_WEBHOOK
+        BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
+        MESSAGE="**New Build Available!**\n\nBuilt at: \`$BUILD_TIME\`\n\n**Latest Changes:**\n$COMMITS\n\n*Ara ara~ Your favorite onee-san has a fresh build for you <3*\n\n**My AniList:** https://anilist.co/user/Dawnusedyeet/\n\nAPK file attached below uwu~"
+        curl -H "Content-Type: application/json" -d "{\"content\":\"$MESSAGE\"}" $DISCORD_WEBHOOK
+        curl -F "file=@$APK_PATH" $DISCORD_WEBHOOK
 
     - name: Upload APK to Telegram
       run: |
@@ -67,13 +59,6 @@ jobs:
         TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHANNEL_ID }}
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
-
-        MESSAGE="Virus with trojon and stuff.
-
-        Recent commits:
-        $COMMITS"
-
-        curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" \
-             -F "chat_id=$TELEGRAM_CHAT_ID" \
-             -F "document=@$APK_PATH" \
-             -F "caption=$MESSAGE"
+        BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
+        MESSAGE="*New Build Available!*\n\nBuilt at: \`$BUILD_TIME\`\n\n*Latest Changes:*\n$COMMITS\n\n_Ara ara~ Your favorite onee-san has a fresh build for you <3_\n\n*My AniList:* https://anilist.co/user/Dawnusedyeet/\n\nAPK file attached below uwu~"
+        curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" -F "chat_id=$TELEGRAM_CHAT_ID" -F "document=@$APK_PATH" -F "caption=$MESSAGE" -F "parse_mode=Markdown"
