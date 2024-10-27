@@ -57,7 +57,26 @@ jobs:
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME="$(date '+%Y-%m-%d %H:%M:%S UTC')"
         
-        MESSAGE="🌸 *New Build Available\!* 🌸%0A%0A⏰ Built at: \`${BUILD_TIME}\`%0A%0A📝 *Latest Changes:*%0A${COMMITS}%0A%0A💕 _Ara ara\~ Your favorite onee\-san has a fresh build for you_ 💕%0A%0A🔗 *My AniList:* https://anilist\.co/user/Dawnusedyeet/%0A%0A📦 _APK file attached above uwu\~_"
+        cat << 'EOF' > message.txt
+        🌸 *New Build Available!* 🌸
+        
+        ⏰ Built at: \`${BUILD_TIME}\`
+        
+        📝 *Latest Changes:*
+        ${COMMITS}
+        
+        💕 _Ara ara~ Your favorite onee-san has a fresh build for you_ 💕
+        
+        🔗 *My AniList:* https://anilist.co/user/Dawnusedyeet/
+        
+        📦 _APK file attached above uwu~_
+        EOF
+        
+        # Replace variables in the message
+        envsubst < message.txt > message_final.txt
+        
+        # Convert newlines to %0A and prepare the message
+        MESSAGE=$(cat message_final.txt | tr '\n' ' ' | sed 's/ /%0A/g')
         
         curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
           -F "chat_id=${TELEGRAM_CHAT_ID}" \
