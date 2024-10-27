@@ -38,7 +38,7 @@ jobs:
     - name: Get Commit Information
       id: commits
       run: |
-        COMMITS=$(git log -n 10 --pretty=format:'%h - %s (%an)' | sed 's/"/\\"/g')
+        COMMITS=$(git log -n 10 --pretty=format:"- %h: %s (%an)%n")
         echo "commits<<EOF" >> $GITHUB_OUTPUT
         echo "$COMMITS" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
@@ -48,13 +48,16 @@ jobs:
         DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
-
+        
+        MESSAGE_CONTENT="**New build available!**\n\n**Recent commits:**\n${COMMITS}"
+        
+        # Send the message first
         curl -H "Content-Type: application/json" \
-             -d "{\"content\":\"New build available!\n\nCommits:\n$COMMITS\"}" \
+             -d "{\"content\":\"$MESSAGE_CONTENT\"}" \
              $DISCORD_WEBHOOK
-
+        
+        # Then send the APK
         curl -F "file=@$APK_PATH" \
-             -F "payload_json={\"content\":\"Here is the APK!\"}" \
              $DISCORD_WEBHOOK
 
     - name: Upload APK to Telegram
