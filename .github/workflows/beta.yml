@@ -29,81 +29,39 @@ jobs:
         java-version: '17'
         cache: gradle
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
-
     - name: Grant execute permission to gradlew
       run: chmod +x ./gradlew
 
     - name: Build with Gradle
       run: ./gradlew assembleGoogleAlpha
 
-    - name: Send to Discord and Telegram
+    - name: Get Commit Information
+      id: commits
       run: |
-        python - <<EOF
-        import requests
-        import datetime
-        import subprocess
+        COMMITS=$(git log -n 10 --pretty=format:"• [\`%h\`] \"%s\" (%an)%n")
+        echo "commits<<EOF" >> $GITHUB_OUTPUT
+        echo "$COMMITS" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
-        raw_commits = subprocess.check_output(['git', 'log', '-n', '10', '--pretty=format:• %h: %s']).decode()
-        commits_list = raw_commits.split('\n')
-        discord_commits = '\n> '.join(commits_list)
-        telegram_commits = '\n`'.join(commits_list)
+    - name: Upload APK to Discord
+      run: |
+        BUILD_TIME="$(date '+%Y-%m-%d %H:%M:%S UTC')"
+        DISCORD_MESSAGE="🌸 **Ara Ara~** A new build is here! 💕\\n\\n⏰ **Built at:** \`$BUILD_TIME\`\\n\\n📝 **Latest Changes:**\\n> ${COMMITS}\\n\\n📦 *APK file attached above uwu~*"
+        curl -H "Content-Type: application/json" -X POST -d "{\"content\":\"$DISCORD_MESSAGE\"}" ${{ secrets.DISCORD_WEBHOOK }}
+        curl -F "file=@app/build/outputs/apk/google/alpha/app-google-alpha.apk" ${{ secrets.DISCORD_WEBHOOK }}
 
-        build_time = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
-
-        discord_message = f"""🌸 **New Build Available!** 🌸
-
-        ⏰ **Built at:** `{build_time}`
-
-        📝 **Latest Changes:**
-        > {discord_commits}
-
-        💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕
-
-        🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/
-
-        📦 *APK file attached above uwu~*"""
-
-        telegram_message = f"""🌸 *New Build Available!* 🌸
-
-        ⏰ *Built at:* `{build_time}`
-
-        📝 *Latest Changes:*
-        `{telegram_commits}`
-
-        💕 _Ara ara~ Your favorite onee-san has a fresh build for you_ 💕
-
-        🔗 *My AniList:* https://anilist.co/user/Dawnusedyeet/
-
-        📦 _APK file attached above uwu~_"""
-
-        discord_payload = {
-            "content": discord_message
-        }
-
-        discord_webhook = "${{ secrets.DISCORD_WEBHOOK }}"
-        requests.post(discord_webhook, json=discord_payload)
+    - name: Upload APK to Telegram
+      run: |
+        TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
+        TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHANNEL_ID }}"
+        APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
+        COMMITS="${{ steps.commits.outputs.commits }}"
+        BUILD_TIME="$(date '+%Y-%m-%d %H:%M:%S UTC')"
         
-        with open('app/build/outputs/apk/google/alpha/app-google-alpha.apk', 'rb') as apk:
-            requests.post(discord_webhook, files={'file': apk})
-
-        telegram_url = f"https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument"
-        with open('app/build/outputs/apk/google/alpha/app-google-alpha.apk', 'rb') as apk:
-            requests.post(
-                telegram_url,
-                data={
-                    'chat_id': '${{ secrets.TELEGRAM_CHANNEL_ID }}',
-                    'caption': telegram_message,
-                    'parse_mode': 'Markdown'
-                },
-                files={'document': apk}
-            )
-        EOF
+        TELEGRAM_MESSAGE="🌸 *New Build Available!* 🌸%0A%0A⏰ *Built at:* \`${BUILD_TIME}\`%0A%0A📝 *Latest Changes:*%0A\`${COMMITS}\`%0A%0A💕 _Ara ara~ Your favorite onee-san has a fresh build for you_ 💕%0A%0A🔗 *My AniList:* https://anilist.co/user/Dawnusedyeet/%0A%0A📦 _APK file attached above uwu~_"
+        
+        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
+          -F "chat_id=${TELEGRAM_CHAT_ID}" \
+          -F "document=@${APK_PATH}" \
+          -F "caption=${TELEGRAM_MESSAGE}" \
+          -F "parse_mode=Markdown"
