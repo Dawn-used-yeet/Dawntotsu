@@ -55,7 +55,7 @@ jobs:
           --arg time "$BUILD_TIME" \
           --arg commits "$COMMITS" \
           '{
-            "content": "🌟 **New Build Available!**\n\n⏰ Built at: `" + $time + "`\n\n📝 **Latest Changes:**\n" + $commits + "\n\n💕 *Fresh build ready for testing!* 💕\n\n📦 *APK file attached below*"
+            content: "🌟 **New Build Available!**\n\n⏰ Built at: `\($time)`\n\n📝 **Latest Changes:**\n\($commits)\n\n💕 *Fresh build ready for testing!* 💕\n\n📦 *APK file attached below*"
           }')
         
         # Send to Discord
@@ -87,3 +87,4 @@ jobs:
           -F "document=@$APK_PATH" \
           -F "caption=$MESSAGE" \
           -F "parse_mode=Markdown"
+        
