@@ -50,13 +50,8 @@ jobs:
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
         
-        # Escape special characters and format JSON properly
-        MESSAGE=$(cat <<EOF
-        {
-          "content": "🌸 **New Build Available!** 🌸\n\n⏰ Built at: \`${BUILD_TIME}\`\n\n📝 **Latest Changes:**\n${COMMITS}\n\n💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕\n\n🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/\n\n📦 *APK file attached below uwu~*"
-        }
-EOF
-        )
+        # Create the message JSON
+        MESSAGE="{\"content\":\"🌸 **New Build Available!** 🌸\\n\\n⏰ Built at: \`${BUILD_TIME}\`\\n\\n📝 **Latest Changes:**\\n${COMMITS}\\n\\n💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕\\n\\n🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/\\n\\n📦 *APK file attached below uwu~*\"}"
         
         # First send the message
         curl -H "Content-Type: application/json" -d "$MESSAGE" "$DISCORD_WEBHOOK"
