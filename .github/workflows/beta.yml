@@ -1,18 +1,20 @@
-name: Build APK and Notify Discord
+name: Build APK and Send Apk
 
 on:
   push:
-    branches:
-      - dev
-      - Workflow(serious)
+    branches-ignore:
+      - main
+      - l10n_dev_crowdin
+      - custom-download-location
     paths-ignore:
       - '**/README.md'
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      CI: true
 
     steps:
     - name: Checkout repo
@@ -20,111 +22,70 @@ jobs:
       with:
         fetch-depth: 0
 
-        
-    - name: Download last SHA artifact
-      uses: dawidd6/action-download-artifact@v3
-      with:
-        workflow: beta.yml
-        name: last-sha
-        path: .
-      
-      continue-on-error: true
-
-    - name: Get Commits Since Last Run
-      run: |
-        if [ -f last_sha.txt ]; then
-          LAST_SHA=$(cat last_sha.txt)
-        else
-          # Fallback to first commit if no previous SHA available
-          LAST_SHA=$(git rev-list --max-parents=0 HEAD)
-        fi
-        echo "Commits since $LAST_SHA:"
-        # Accumulate commit logs in a shell variable
-        COMMIT_LOGS=$(git log $LAST_SHA..HEAD --pretty=format:"● %s ~%an")
-        # URL-encode the newline characters for GitHub Actions
-        COMMIT_LOGS="${COMMIT_LOGS//'%'/'%25'}"
-        COMMIT_LOGS="${COMMIT_LOGS//$'\n'/'%0A'}"
-        COMMIT_LOGS="${COMMIT_LOGS//$'\r'/'%0D'}"
-        # Append the encoded commit logs to the COMMIT_LOG environment variable
-        echo "COMMIT_LOG=${COMMIT_LOGS}" >> $GITHUB_ENV
-        # Debugging: Print the variable to check its content
-        echo "$COMMIT_LOGS"
-        echo "$COMMIT_LOGS" > commit_log.txt
-      shell: /usr/bin/bash -e {0}
-      env:
-        CI: true
-      continue-on-error: true
-
-    - name: Save Current SHA for Next Run
-      run: echo ${{ github.sha }} > last_sha.txt
-
-    - name: Set variables
-      run: |
-        VER=$(grep -E -o "versionName \".*\"" app/build.gradle | sed -e 's/versionName //g' | tr -d '"')
-        SHA=${{ github.sha }}
-        VERSION="$VER+${SHA:0:7}"
-        echo "Version $VERSION"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-
     - name: Setup JDK 17
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: 17
+        java-version: '17'
         cache: gradle
-  
-    - name: Decode Keystore File
-      run: echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > $GITHUB_WORKSPACE/key.keystore
-  
-    - name: List files in the directory
-      run: ls -l
-      
-    - name: Make gradlew executable
+
+    - name: Grant execute permission to gradlew
       run: chmod +x ./gradlew
-  
+
     - name: Build with Gradle
-      run: ./gradlew assembleGoogleAlpha -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/key.keystore -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+      run: ./gradlew assembleGoogleAlpha
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v4
-      with:
-          name: Dantotsu
-          retention-days: 5
-          compression-level: 9
-          path: "app/build/outputs/apk/google/alpha/app-google-alpha.apk"
-            
-    - name: Upload APK to Discord and Telegram
-      if: ${{ github.repository == 'rebelonion/Dantotsu' }}
-      shell: bash
+    - name: Get Commit Information
+      id: commits
       run: |
-        #Discord
-        commit_messages=$(echo "$COMMIT_LOG" | sed 's/%0A/\n/g; s/^/\n/')
-        #  Truncate commit messages if they are too long
-        max_length=1900 # Adjust this value as needed
-        if [ ${#commit_messages} -gt $max_length ]; then
-          commit_messages="${commit_messages:0:$max_length}... (truncated)"
-        fi
-        contentbody=$( jq -nc --arg msg "Alpha-Build: <@&1225347048321191996> **$VERSION**:" --arg commits "$commit_messages" '{"content": ($msg + "\n" + $commits)}' )
-        curl -F "payload_json=${contentbody}" -F "dantotsu_debug=@app/build/outputs/apk/google/alpha/app-google-alpha.apk" ${{ secrets.DISCORD_WEBHOOK }}
+        COMMITS=$(git log -n 10 --pretty=format:"• [`%h`] %s (%an)%n")
+        echo "commits<<EOF" >> $GITHUB_OUTPUT
+        echo "$COMMITS" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Upload APK to Discord
+      run: |
+        DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}
+        APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
+        COMMITS="${{ steps.commits.outputs.commits }}"
+        BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
         
-        #Telegram
-        curl -F "chat_id=${{ secrets.TELEGRAM_CHANNEL_ID }}" \
-          -F "document=@app/build/outputs/apk/google/alpha/app-google-universal-alpha.apk" \
-          -F "caption=Alpha-Build: ${VERSION}: ${commit_messages}" \
-         https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument
+        DISCORD_MESSAGE="🌸 **New Build Available!** 🌸
 
-      env:
-        COMMIT_LOG: ${{ env.COMMIT_LOG }}
-        VERSION: ${{ env.VERSION }}
+        ⏰ Built at: \`${BUILD_TIME}\`
 
-    - name: Upload Current SHA as Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: last-sha
-        path: last_sha.txt
+        📝 **Latest Changes:**
+        ${COMMITS}
 
-    - name: Upload Commit log as Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: commit-log
-        path: commit_log.txt
+        💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕
+
+        🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/
+
+        📦 *APK file attached below uwu~*"
+        
+        curl -H "Content-Type: application/json" -d "{\"content\":\"$DISCORD_MESSAGE\"}" "$DISCORD_WEBHOOK"
+        curl -F "file=@$APK_PATH" "$DISCORD_WEBHOOK"
+
+    - name: Upload APK to Telegram
+      run: |
+        TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHANNEL_ID }}
+        APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
+        COMMITS="${{ steps.commits.outputs.commits }}"
+        BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
+        
+        TELEGRAM_MESSAGE="🌸 *New Build Available!* 🌸
+
+        ⏰ Built at: \`${BUILD_TIME}\`
+
+        📝 *Latest Changes:*
+        ${COMMITS}
+
+        💕 _Ara ara~ Your favorite onee-san has a fresh build for you_ 💕
+
+        🔗 *My AniList:* https://anilist.co/user/Dawnusedyeet/
+
+        📦 _APK file attached below uwu~_"
+        
+        curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" -F "chat_id=$TELEGRAM_CHAT_ID" -F "document=@$APK_PATH" -F "caption=$TELEGRAM_MESSAGE" -F "parse_mode=Markdown"
+
