@@ -38,9 +38,8 @@ jobs:
     - name: Get Commit Information
       id: commits
       run: |
-        echo "COMMIT_LOG<<EOF" >> $GITHUB_ENV
-        git log -n 10 --pretty=format:"%h - %s (%an)" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
+        COMMIT_LOG=$(git log -n 10 --pretty=format:"%h - %s (%an)")
+        echo "COMMIT_LOG=${COMMIT_LOG}" >> $GITHUB_ENV
 
     - name: Upload APK to Discord
       run: |
