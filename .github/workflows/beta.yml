@@ -49,9 +49,30 @@ jobs:
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
-        MESSAGE="**New Build Available!**\n\nBuilt at: \`$BUILD_TIME\`\n\n**Latest Changes:**\n$COMMITS\n\n*Ara ara~ Your favorite onee-san has a fresh build for you <3*\n\n**My AniList:** https://anilist.co/user/Dawnusedyeet/\n\nAPK file attached below uwu~"
-        curl -H "Content-Type: application/json" -d "{\"content\":\"$MESSAGE\"}" $DISCORD_WEBHOOK
-        curl -F "file=@$APK_PATH" $DISCORD_WEBHOOK
+        
+        DISCORD_MESSAGE=$(cat << 'EOF'
+        **🌸 New Build Available! 🌸**
+        
+        ⏰ Built at: `${BUILD_TIME}`
+        
+        📝 **Latest Changes:**
+        ${COMMITS}
+        
+        💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕
+        
+        🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/
+        
+        📦 *APK file attached below uwu~*
+        EOF
+        )
+        
+        # Send message first
+        curl -H "Content-Type: application/json" \
+          -d "{\"content\":\"$DISCORD_MESSAGE\"}" \
+          "$DISCORD_WEBHOOK"
+        
+        # Send APK file second
+        curl -F "file=@$APK_PATH" "$DISCORD_WEBHOOK"
 
     - name: Upload APK to Telegram
       run: |
@@ -60,5 +81,22 @@ jobs:
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
-        MESSAGE="*New Build Available!*\n\nBuilt at: \`$BUILD_TIME\`\n\n*Latest Changes:*\n$COMMITS\n\n_Ara ara~ Your favorite onee-san has a fresh build for you <3_\n\n*My AniList:* https://anilist.co/user/Dawnusedyeet/\n\nAPK file attached below uwu~"
-        curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" -F "chat_id=$TELEGRAM_CHAT_ID" -F "document=@$APK_PATH" -F "caption=$MESSAGE" -F "parse_mode=Markdown"
+        
+        TELEGRAM_MESSAGE="🌸 *New Build Available!* 🌸
+
+⏰ Built at: \`${BUILD_TIME}\`
+
+📝 *Latest Changes:*
+${COMMITS}
+
+💕 _Ara ara~ Your favorite onee-san has a fresh build for you_ 💕
+
+🔗 *My AniList:* https://anilist.co/user/Dawnusedyeet/
+
+📦 _APK file attached below uwu~_"
+        
+        curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" \
+          -F "chat_id=$TELEGRAM_CHAT_ID" \
+          -F "document=@$APK_PATH" \
+          -F "caption=$TELEGRAM_MESSAGE" \
+          -F "parse_mode=Markdown"
