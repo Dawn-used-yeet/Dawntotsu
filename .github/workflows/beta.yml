@@ -41,11 +41,11 @@ jobs:
         if [ -f last_sha.txt ]; then
           LAST_SHA=$(cat last_sha.txt)
         else
-            LAST_SHA=$(git rev-list --max-parents=0 HEAD)
+          LAST_SHA=$(git rev-list --max-parents=0 HEAD)
         fi
         echo "Commits since $LAST_SHA:"
-        # Limit to the last 10 commits
-        COMMIT_LOGS=$(git log $LAST_SHA..HEAD -n 10 --pretty=format:"● %s ~%an [֍](https://github.com/${{ github.repository }}/commit/%H)")
+        # Fetch all commits since the last SHA
+        COMMIT_LOGS=$(git log $LAST_SHA..HEAD --pretty=format:"● %s ~%an [֍](https://github.com/${{ github.repository }}/commit/%H)")
         # URL-encode the newline characters for GitHub Actions
         COMMIT_LOGS="${COMMIT_LOGS//'%'/'%25'}"
         COMMIT_LOGS="${COMMIT_LOGS//$'\n'/'%0A'}"
@@ -64,7 +64,7 @@ jobs:
       env:
         CI: true
       continue-on-error: true
-
+      
     - name: Save Current SHA for Next Run
       run: echo ${{ github.sha }} > last_sha.txt
 
