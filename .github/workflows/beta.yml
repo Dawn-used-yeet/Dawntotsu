@@ -45,7 +45,8 @@ jobs:
 
     - name: Upload APK to Discord
       run: |
-        curl -H "Content-Type: application/json" -X POST -d '{"content":"🌸 **Ara Ara~** A new build is here! 💕\n\n⏰ **Built at:** `'$(date '+%Y-%m-%d %H:%M:%S UTC')'`\n\n📱 Your fresh APK awaits~"}' ${{ secrets.DISCORD_WEBHOOK }}
+        MESSAGE="{\"content\":\"🌸 **Ara Ara~** A new build is here! 💕\\n\\n⏰ **Built at:** \`$(date '+%Y-%m-%d %H:%M:%S UTC')\`\\n\\n📱 Your fresh APK awaits~\"}"
+        curl -H "Content-Type: application/json" -X POST -d "$MESSAGE" ${{ secrets.DISCORD_WEBHOOK }}
         curl -F "file=@app/build/outputs/apk/google/alpha/app-google-alpha.apk" ${{ secrets.DISCORD_WEBHOOK }}
 
     - name: Upload APK to Telegram
