@@ -29,39 +29,80 @@ jobs:
         java-version: '17'
         cache: gradle
 
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
     - name: Grant execute permission to gradlew
       run: chmod +x ./gradlew
 
     - name: Build with Gradle
       run: ./gradlew assembleGoogleAlpha
 
-    - name: Get Commit Information
-      id: commits
+    - name: Send to Discord and Telegram
       run: |
-        COMMITS=$(git log -n 10 --pretty=format:"• [\`%h\`] \"%s\" (%an)%n")
-        echo "commits<<EOF" >> $GITHUB_OUTPUT
-        echo "$COMMITS" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+        python - <<EOF
+        import requests
+        import datetime
+        import subprocess
 
-    - name: Upload APK to Discord
-      run: |
-        BUILD_TIME="$(date '+%Y-%m-%d %H:%M:%S UTC')"
-        DISCORD_MESSAGE="🌸 **Ara Ara~** A new build is here! 💕\\n\\n⏰ **Built at:** \`$BUILD_TIME\`\\n\\n📝 **Latest Changes:**\\n> ${COMMITS}\\n\\n📦 *APK file attached above uwu~*"
-        curl -H "Content-Type: application/json" -X POST -d "{\"content\":\"$DISCORD_MESSAGE\"}" ${{ secrets.DISCORD_WEBHOOK }}
-        curl -F "file=@app/build/outputs/apk/google/alpha/app-google-alpha.apk" ${{ secrets.DISCORD_WEBHOOK }}
+        # Get commits
+        commits = subprocess.check_output(['git', 'log', '-n', '10', '--pretty=format:• [`%h`] "%s"']).decode()
+        
+        # Format build time
+        build_time = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
 
-    - name: Upload APK to Telegram
-      run: |
-        TELEGRAM_BOT_TOKEN="${{ secrets.TELEGRAM_BOT_TOKEN }}"
-        TELEGRAM_CHAT_ID="${{ secrets.TELEGRAM_CHANNEL_ID }}"
-        APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
-        COMMITS="${{ steps.commits.outputs.commits }}"
-        BUILD_TIME="$(date '+%Y-%m-%d %H:%M:%S UTC')"
+        # Discord message
+        discord_message = f"""🌸 **New Build Available!** 🌸
+
+        ⏰ **Built at:** `{build_time}`
+
+        📝 **Latest Changes:**
+        > {commits.replace('\n', '\n> ')}
+
+        💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕
+
+        🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/
+
+        📦 *APK file attached above uwu~*"""
+
+        # Telegram message
+        telegram_message = f"""🌸 *New Build Available!* 🌸
+
+        ⏰ *Built at:* `{build_time}`
+
+        📝 *Latest Changes:*
+        `{commits.replace('\n', '\n')}`
+
+        💕 _Ara ara~ Your favorite onee-san has a fresh build for you_ 💕
+
+        🔗 *My AniList:* https://anilist.co/user/Dawnusedyeet/
+
+        📦 _APK file attached above uwu~_"""
+
+        # Send to Discord
+        discord_webhook = "${{ secrets.DISCORD_WEBHOOK }}"
+        requests.post(discord_webhook, json={"content": discord_message})
         
-        TELEGRAM_MESSAGE="🌸 *New Build Available!* 🌸%0A%0A⏰ *Built at:* \`${BUILD_TIME}\`%0A%0A📝 *Latest Changes:*%0A\`${COMMITS}\`%0A%0A💕 _Ara ara~ Your favorite onee-san has a fresh build for you_ 💕%0A%0A🔗 *My AniList:* https://anilist.co/user/Dawnusedyeet/%0A%0A📦 _APK file attached above uwu~_"
-        
-        curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
-          -F "chat_id=${TELEGRAM_CHAT_ID}" \
-          -F "document=@${APK_PATH}" \
-          -F "caption=${TELEGRAM_MESSAGE}" \
-          -F "parse_mode=Markdown"
+        with open('app/build/outputs/apk/google/alpha/app-google-alpha.apk', 'rb') as apk:
+            requests.post(discord_webhook, files={'file': apk})
+
+        # Send to Telegram
+        telegram_url = f"https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument"
+        with open('app/build/outputs/apk/google/alpha/app-google-alpha.apk', 'rb') as apk:
+            requests.post(
+                telegram_url,
+                data={
+                    'chat_id': '${{ secrets.TELEGRAM_CHANNEL_ID }}',
+                    'caption': telegram_message,
+                    'parse_mode': 'Markdown'
+                },
+                files={'document': apk}
+            )
+        EOF
