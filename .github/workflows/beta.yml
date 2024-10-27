@@ -68,7 +68,7 @@ jobs:
         APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
         COMMITS="${{ steps.commits.outputs.commits }}"
 
-        MESSAGE="Virus with trojon and stuff."
+        MESSAGE="Virus with trojon and stuff.
 
         Recent commits:
         $COMMITS"
