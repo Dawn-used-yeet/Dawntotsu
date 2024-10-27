@@ -1,4 +1,4 @@
-name: Build APK and Notify Discord
+name: Build APK and Notify
 
 on:
   push:
@@ -10,354 +10,53 @@ on:
       - '**/README.md'
     tags:
       - "v*.*.*"
-      
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    env:
-      CI: true
-      SKIP_BUILD: false
 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Download last SHA artifact
-      uses: dawidd6/action-download-artifact@v3
-      with:
-        workflow: beta.yml
-        name: last-sha
-        path: .
-      continue-on-error: true
-
-    - name: Get Commits Since Last Run
-      run: |
-        if [ -f last_sha.txt ]; then
-          LAST_SHA=$(cat last_sha.txt)
-        else
-            LAST_SHA=$(git rev-list --max-parents=0 HEAD)
-        fi
-        echo "Commits since $LAST_SHA:"
-        # Limit to the last 10 commits
-        COMMIT_LOGS=$(git log $LAST_SHA..HEAD -n 10 --pretty=format:"● %s ~%an [֍](https://github.com/${{ github.repository }}/commit/%H)")
-        # URL-encode the newline characters for GitHub Actions
-        COMMIT_LOGS="${COMMIT_LOGS//'%'/'%25'}"
-        COMMIT_LOGS="${COMMIT_LOGS//$'\n'/'%0A'}"
-        COMMIT_LOGS="${COMMIT_LOGS//$'\r'/'%0D'}"
-        # Replace commit messages with pull request links
-        COMMIT_LOGS=$(echo "$COMMIT_LOGS" | sed -E 's/#([0-9]+)/[#\1](https:\/\/github\.com\/${{ github.repository }}\/pull\/\1)/g')
-        # Save to a file instead of an environment variable
-        echo "$COMMIT_LOGS" > commit_log.txt
-        echo "COMMIT_LOG=${COMMIT_LOGS}" >> $GITHUB_ENV
-        echo "$COMMIT_LOGS"
-        # Extract branch name from github.ref
-        BRANCH=${{ github.ref }}
-        BRANCH=${BRANCH#refs/heads/}
-        echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
-        shell: /usr/bin/bash -e {0}
-      env:
-        CI: true
-      continue-on-error: true
-
-    - name: Save Current SHA for Next Run
-      run: echo ${{ github.sha }} > last_sha.txt
-
-    - name: Set variables
-      run: |
-        VER=$(grep -E -o "versionName \".*\"" app/build.gradle | sed -e 's/versionName //g' | tr -d '"')
-        SHA=${{ github.sha }}
-        VERSION="$VER+${SHA:0:7}"
-        echo "Version $VERSION"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-    - name: List files in the directory
-      run: ls -l
 
     - name: Setup JDK 17
-      if: ${{ env.SKIP_BUILD != 'true' }}
       uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
         java-version: 17
-        cache: gradle
-
-    - name: Decode Keystore File
-      if: ${{ github.repository == 'rebelonion/Dantotsu' }}
-      run: echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > $GITHUB_WORKSPACE/key.keystore
-
-    - name: Make gradlew executable
-      if: ${{ env.SKIP_BUILD != 'true' }}
-      run: chmod +x ./gradlew
 
     - name: Build with Gradle
-      if: ${{ env.SKIP_BUILD != 'true' }}
+      run: ./gradlew assembleGoogleAlpha
+
+    - name: Get Commit Information
+      id: commits
       run: |
-        if [ "${{ github.repository }}" == "rebelonion/Dantotsu" ]; then
-          ./gradlew assembleGoogleAlpha \
-            -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/key.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }};
-        else
-          ./gradlew assembleGoogleAlpha;
-        fi
+        echo "COMMIT_LOG<<EOF" >> $GITHUB_ENV
+        git log -n 10 --pretty=format:"%h - %s (%an)" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
-    - name: Upload a Build Artifact
-      if: ${{ env.SKIP_BUILD != 'true' && github.repository == 'rebelonion/Dantotsu' }}
-      uses: actions/upload-artifact@v4
-      with:
-          name: Dantotsu
-          retention-days: 5
-          compression-level: 9
-          path: "app/build/outputs/apk/google/alpha/app-google-alpha.apk"
-
-    - name: Create GitHub Release
-      if: ${{ env.SKIP_BUILD != 'true' && github.repository != 'rebelonion/Dantotsu' }}
-      uses: softprops/action-gh-release@v2.0.6
-      with:
-          files: app/build/outputs/apk/google/alpha/app-google-alpha.apk
-          name: ${{ env.BRANCH }} build ${{ env.VERSION }}
-          tag_name: v${{ env.VERSION }}
-          body: |
-                New Pretester Build ${{ env.VERSION }} released on branch "${{ env.BRANCH }}" :)
-                Commits:
-                        $(cat commit_log.txt)
-                prerelease: false
-                make_latest: true
-                generate_release_notes: true
-                fail_on_unmatched_files: true
-
-    - name: Upload APK to Discord and Telegram
-      shell: bash
+    - name: Upload APK to Discord
       run: |
-        # Prepare Discord embed
-        fetch_user_details() {
-          local login=$1
-          user_details=$(curl -s "https://api.github.com/users/$login")
-          name=$(echo "$user_details" | jq -r '.name // .login')
-          login=$(echo "$user_details" | jq -r '.login')
-          avatar_url=$(echo "$user_details" | jq -r '.avatar_url')
-          echo "$name|$login|$avatar_url"
-        }
-        
-        # Additional information for the goats
-        declare -A additional_info
-        additional_info["ibo"]="\n Discord: <@951737931159187457>\n AniList: [takarealist112](<https://anilist.co/user/5790266/>)"
-        additional_info["aayush262"]="\n Discord: <@918825160654598224>\n AniList: [aayush262](<https://anilist.co/user/5144645/>)"
-        additional_info["rebelonion"]="\n Discord: <@714249925248024617>\n AniList: [rebelonion](<https://anilist.co/user/6077251/>)\n PornHub: [rebelonion](<https://www.cornhub.com/model/rebelonion>)"
-        
-        # Decimal color codes for contributors
-        declare -A contributor_colors
-        default_color="#ff25f9"
-        contributor_colors["ibo"]="#ff9b46"
-        contributor_colors["aayush262"]="#5d689d"
-        contributor_colors["Sadwhy"]="#ff7e95"
-        contributor_colors["rebelonion"]="#d4e5ed"
-        hex_to_decimal() { printf '%d' "0x${1#"#"}"; }
-        
-        # Count recent commits and create an associative array
-        declare -A recent_commit_counts
-        echo "Debug: Processing COMMIT_LOG:"
-        echo "$COMMIT_LOG"
-        while read -r count name; do
-            recent_commit_counts["$name"]=$count
-            echo "Debug: Commit count for $name: $count"
-        done < <(echo "$COMMIT_LOG" | sed 's/%0A/\n/g' | grep -oP '(?<=~)[^[]*' | sort | uniq -c | sort -rn)
-        
-        echo "Debug: Fetching contributors from GitHub"
-        # Fetch contributors from GitHub
-        contributors=$(curl -s "https://api.github.com/repos/${{ github.repository }}/contributors")
-        echo "Debug: Contributors response:"
-        echo "$contributors"
-        
-        # Create a sorted list of contributors based on recent commit counts
-        sorted_contributors=$(for login in $(echo "$contributors" | jq -r '.[].login'); do
-            user_info=$(fetch_user_details "$login")
-            name=$(echo "$user_info" | cut -d'|' -f1)
-            count=${recent_commit_counts["$name"]:-0}
-            echo "$count|$login"
-        done | sort -rn | cut -d'|' -f2)
-        
-        # Initialize needed variables
-        developers=""
-        committers_count=0
-        max_commits=0
-        top_contributor=""
-        top_contributor_count=0
-        top_contributor_avatar=""
-        embed_color=$default_color
-        
-        # Process contributors in the new order
-        while read -r login; do
-          user_info=$(fetch_user_details "$login")
-          name=$(echo "$user_info" | cut -d'|' -f1)
-          login=$(echo "$user_info" | cut -d'|' -f2)
-          avatar_url=$(echo "$user_info" | cut -d'|' -f3)
-          
-          # Only process if they have recent commits
-          commit_count=${recent_commit_counts["$name"]:-0}
-          if [ $commit_count -gt 0 ]; then
-            # Update top contributor information
-            if [ $commit_count -gt $max_commits ]; then
-              max_commits=$commit_count
-              top_contributors=("$login")
-              top_contributor_count=1
-              top_contributor_avatar="$avatar_url"
-              embed_color=$(hex_to_decimal "${contributor_colors[$name]:-$default_color}")
-            elif [ $commit_count -eq $max_commits ]; then
-              top_contributors+=("$login")
-              top_contributor_count=$((top_contributor_count + 1))
-              embed_color=$default_color
-            fi
-            echo "Debug top contributors:"
-            echo "$top_contributors"
-            
-            # Get commit count for this contributor on the dev branch
-            branch_commit_count=$(git rev-list --count dev --author="$login")
-            
-            # Debug: Print recent_commit_counts
-            echo "Debug: recent_commit_counts contents:"
-            for key in "${!recent_commit_counts[@]}"; do
-              echo "$key: ${recent_commit_counts[$key]}"
-            done
-            
-            extra_info="${additional_info[$name]}"
-            if [ -n "$extra_info" ]; then
-              extra_info=$(echo "$extra_info" | sed 's/\\n/\n- /g')
-            fi
-            
-            # Construct the developer entry
-            developer_entry="◗ **${name}** ${extra_info}
-        - Github: [${login}](https://github.com/${login})
-        - Commits: ${branch_commit_count}"
+        DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}
+        APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
+        COMMIT_LOG="${{ env.COMMIT_LOG }}"
 
-            # Add the entry to developers, with a newline if it's not the first entry
-            if [ -n "$developers" ]; then
-              developers="${developers}
-        ${developer_entry}"
-            else
-              developers="${developer_entry}"
-            fi
-            committers_count=$((committers_count + 1))
-          fi
-        done <<< "$sorted_contributors"
-        
-        # Set the thumbnail URL and color based on top contributor(s)
-        if [ $top_contributor_count -eq 1 ]; then
-          thumbnail_url="$top_contributor_avatar"
-        else
-          thumbnail_url="https://i.imgur.com/5o3Y9Jb.gif"
-          embed_color=$default_color
-        fi
-        
-        # Truncate field values
-        max_length=1000
-        commit_messages=$(echo "$COMMIT_LOG" | sed 's/%0A/\n/g; s/^/\n/')
-        if [ ${#developers} -gt $max_length ]; then
-          developers="${developers:0:$max_length}... (truncated)"
-        fi
-        if [ ${#commit_messages} -gt $max_length ]; then
-          commit_messages="${commit_messages:0:$max_length}... (truncated)"
-        fi
-
-        # Construct Discord payload
-        discord_data=$(jq -nc \
-                      --arg field_value "$commit_messages" \
-                      --arg author_value "$developers" \
-                      --arg footer_text "Version $VERSION" \
-                      --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
-                      --arg thumbnail_url "$thumbnail_url" \
-                      --argjson embed_color "$embed_color" \
-                      '{
-                        "content": "<@&1225347048321191996>",
-                        "embeds": [
-                          {
-                            "title": "New Alpha-Build dropped",
-                            "color": $embed_color,
-                            "fields": [
-                              {
-                                "name": "Commits:",
-                                "value": $field_value,
-                                "inline": true
-                              },
-                              {
-                                "name": "Developers:",
-                                "value": $author_value,
-                                "inline": false
-                              }
-                            ],
-                            "footer": {
-                              "text": $footer_text
-                            },
-                            "timestamp": $timestamp,
-                            "thumbnail": {
-                              "url": $thumbnail_url
-                            }
-                          }
-                        ],
-                        "attachments": []
-                      }')
-        echo "Debug: Final Discord payload:"
-        echo "$discord_data"
-        
-        # Send Discord message
         curl -H "Content-Type: application/json" \
-             -d "$discord_data" \
-             ${{ secrets.DISCORD_WEBHOOK }}
-        echo "You have only send an embed to discord due to SKIP_BUILD being set to true"
-        
-        # Upload APK to Discord
-        if [ "$SKIP_BUILD" != "true" ]; then
-          curl -F "payload_json=${contentbody}" \
-               -F "dantotsu_debug=@app/build/outputs/apk/google/alpha/app-google-alpha.apk" \
-               ${{ secrets.DISCORD_WEBHOOK }}
-        else
-          echo "Skipping APK upload to Discord due to SKIP_BUILD being set to true"
-        fi
+             -d "{\"content\":\"New build available!\n\nCommits:\n$COMMIT_LOG\"}" \
+             $DISCORD_WEBHOOK
 
-        # Format commit messages for Telegram
-        telegram_commit_messages=$(echo "$COMMIT_LOG" | sed 's/%0A/\n/g' | while read -r line; do
-          message=$(echo "$line" | sed -E 's/● (.*) ~(.*) \[֍\]\((.*)\)/● \1 ~\2 <a href="\3">֍<\/a>/')
-          message=$(echo "$message" | sed -E 's/\[#([0-9]+)\]\((https:\/\/github\.com\/[^)]+)\)/<a href="\2">#\1<\/a>/g')
-          echo "$message"
-        done)
-        telegram_commit_messages="<blockquote>${telegram_commit_messages}</blockquote>"
+        curl -F "file=@$APK_PATH" \
+             -F "payload_json={\"content\":\"Here is the APK!\"}" \
+             $DISCORD_WEBHOOK
 
-        # Upload APK to Telegram
-        if [ "$SKIP_BUILD" != "true" ]; then
-          APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
-          response=$(curl -sS -f -X POST \
-            "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
-            -F "chat_id=${{ secrets.TELEGRAM_CHANNEL_ID }}" \
-            -F "document=@$APK_PATH" \
-            -F "caption=New Alpha-Build dropped 🔥
-        
-        Commits:
-        ${telegram_commit_messages}
-        version: ${VERSION}" \
-            -F "parse_mode=HTML")
-        else
-          echo "Skipping Telegram message and APK upload due to SKIP_BUILD being set to true"
-        fi
-        
-      env:
-        COMMIT_LOG: ${{ env.COMMIT_LOG }}
-        VERSION: ${{ env.VERSION }}
+    - name: Upload APK to Telegram
+      run: |
+        TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHANNEL_ID }}
+        APK_PATH="app/build/outputs/apk/google/alpha/app-google-alpha.apk"
+        COMMIT_LOG="${{ env.COMMIT_LOG }}"
 
-    - name: Upload Current SHA as Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: last-sha
-        path: last_sha.txt
-
-    - name: Upload Commit log as Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: commit-log
-        path: commit_log.txt
+        curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument" \
+             -F "chat_id=$TELEGRAM_CHAT_ID" \
+             -F "document=@$APK_PATH" \
+             -F "caption=New build available!\n\nCommits:\n$COMMIT_LOG"
