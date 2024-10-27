@@ -50,20 +50,30 @@ jobs:
         COMMITS="${{ steps.commits.outputs.commits }}"
         BUILD_TIME=$(date '+%Y-%m-%d %H:%M:%S UTC')
         
-        DISCORD_MESSAGE="🌸 **New Build Available!** 🌸
+        # Create message content and escape it properly for JSON
+        MESSAGE_CONTENT=$(cat << EOF
+        🌸 **New Build Available!** 🌸
 
-        ⏰ Built at: \`${BUILD_TIME}\`
+        ⏰ Built at: \`$BUILD_TIME\`
 
         📝 **Latest Changes:**
-        ${COMMITS}
+        $COMMITS
 
         💕 *Ara ara~ Your favorite onee-san has a fresh build for you* 💕
 
         🔗 **My AniList:** https://anilist.co/user/Dawnusedyeet/
 
-        📦 *APK file attached below uwu~*"
+        📦 *APK file attached below uwu~*
+        EOF
+        )
         
-        curl -H "Content-Type: application/json" -d "{\"content\":\"$DISCORD_MESSAGE\"}" "$DISCORD_WEBHOOK"
+        # Send the message first
+        curl -H "Content-Type: application/json" \
+          -H "Accept: application/json" \
+          -d "{\"content\":\"$(echo "$MESSAGE_CONTENT" | jq -sR .)\"}" \
+          "$DISCORD_WEBHOOK"
+        
+        # Send the APK file second
         curl -F "file=@$APK_PATH" "$DISCORD_WEBHOOK"
 
     - name: Upload APK to Telegram
