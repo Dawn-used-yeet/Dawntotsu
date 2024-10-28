@@ -12,15 +12,11 @@ import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import kotlin.math.abs
 
-class Swipy @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
-) : FrameLayout(context, attrs) {
-
+class Swipy @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
+    FrameLayout(context, attrs) {
     var dragDivider: Int = 5
     var vertical = true
-
     var child: View? = getChildAt(0)
-
     var topBeingSwiped: ((Float) -> Unit) = {}
     var onTopSwiped: (() -> Unit) = {}
     var onBottomSwiped: (() -> Unit) = {}
@@ -41,41 +37,53 @@ class Swipy @JvmOverloads constructor(
     private var initialDown = 0f
     private var initialMotion = 0f
 
-    private enum class VerticalPosition { Top, None, Bottom }
-    private enum class HorizontalPosition { Left, None, Right }
+    private enum class VerticalPosition {
+        Top,
+        None,
+        Bottom
+    }
+
+    private enum class HorizontalPosition {
+        Left,
+        None,
+        Right
+    }
 
     private var horizontalPos = HorizontalPosition.None
     private var verticalPos = VerticalPosition.None
-
     private var isSwipeInProgress = false
     private val handler = Handler(Looper.getMainLooper())
-
     private fun setChildPosition() {
         child?.let {
             if (vertical) {
-                verticalPos = when {
-                    !it.canScrollVertically(1) && !it.canScrollVertically(-1) -> {
-                        if (initialDown > (Resources.getSystem().displayMetrics.heightPixels / 2))
-                            VerticalPosition.Bottom
-                        else
-                            VerticalPosition.Top
+                verticalPos =
+                    when {
+                        !it.canScrollVertically(1) && !it.canScrollVertically(-1) -> {
+                            if (
+                                initialDown >
+                                    (Resources.getSystem().displayMetrics.heightPixels / 2)
+                            )
+                                VerticalPosition.Bottom
+                            else VerticalPosition.Top
+                        }
+                        !it.canScrollVertically(1) -> VerticalPosition.Bottom
+                        !it.canScrollVertically(-1) -> VerticalPosition.Top
+                        else -> VerticalPosition.None
                     }
-                    !it.canScrollVertically(1) -> VerticalPosition.Bottom
-                    !it.canScrollVertically(-1) -> VerticalPosition.Top
-                    else -> VerticalPosition.None
-                }
             } else {
-                horizontalPos = when {
-                    !it.canScrollHorizontally(1) && !it.canScrollHorizontally(-1) -> {
-                        if (initialDown > (Resources.getSystem().displayMetrics.widthPixels / 2))
-                            HorizontalPosition.Right
-                        else
-                            HorizontalPosition.Left
+                horizontalPos =
+                    when {
+                        !it.canScrollHorizontally(1) && !it.canScrollHorizontally(-1) -> {
+                            if (
+                                initialDown > (Resources.getSystem().displayMetrics.widthPixels / 2)
+                            )
+                                HorizontalPosition.Right
+                            else HorizontalPosition.Left
+                        }
+                        !it.canScrollHorizontally(1) -> HorizontalPosition.Right
+                        !it.canScrollHorizontally(-1) -> HorizontalPosition.Left
+                        else -> HorizontalPosition.None
                     }
-                    !it.canScrollHorizontally(1) -> HorizontalPosition.Right
-                    !it.canScrollHorizontally(-1) -> HorizontalPosition.Left
-                    else -> HorizontalPosition.None
-                }
             }
         }
     }
@@ -112,7 +120,8 @@ class Swipy @JvmOverloads constructor(
                 }
             }
             MotionEvent.ACTION_POINTER_UP -> onSecondaryPointerUp(ev)
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_CANCEL -> {
                 isBeingDragged = false
                 activePointerId = INVALID_POINTER
             }
@@ -146,7 +155,8 @@ class Swipy @JvmOverloads constructor(
             MotionEvent.ACTION_UP -> {
                 resetSwipes()
                 pointerIndex = ev.findPointerIndex(activePointerId)
-                if (pointerIndex >= 0) finishSpinner(if (vertical) ev.getY(pointerIndex) else ev.getX(pointerIndex))
+                if (pointerIndex >= 0)
+                    finishSpinner(if (vertical) ev.getY(pointerIndex) else ev.getX(pointerIndex))
                 activePointerId = INVALID_POINTER
                 return false
             }
@@ -156,10 +166,13 @@ class Swipy @JvmOverloads constructor(
     }
 
     private fun startDragging(pos: Float) {
-        val posDiff = if ((vertical && verticalPos == VerticalPosition.Top) || (!vertical && horizontalPos == HorizontalPosition.Left))
-            pos - initialDown
-        else
-            initialDown - pos
+        val posDiff =
+            if (
+                (vertical && verticalPos == VerticalPosition.Top) ||
+                    (!vertical && horizontalPos == HorizontalPosition.Left)
+            )
+                pos - initialDown
+            else initialDown - pos
         if (posDiff > touchSlop && !isBeingDragged) {
             initialMotion = initialDown + touchSlop
             isBeingDragged = true
@@ -171,7 +184,8 @@ class Swipy @JvmOverloads constructor(
         if (overscroll > 0) {
             parent.requestDisallowInterceptTouchEvent(true)
             if (vertical) {
-                val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
+                val totalDragDistance =
+                    Resources.getSystem().displayMetrics.heightPixels / dragDivider
                 // Check if on last page
                 if (verticalPos == VerticalPosition.Top && !child?.canScrollVertically(1)!!) {
                     onTopSwiped.invoke()
@@ -179,8 +193,11 @@ class Swipy @JvmOverloads constructor(
                     bottomBeingSwiped.invoke(overscroll * 2 / totalDragDistance)
                 }
             } else {
-                val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
-                if (horizontalPos == HorizontalPosition.Left && !child?.canScrollHorizontally(1)!!) {
+                val totalDragDistance =
+                    Resources.getSystem().displayMetrics.widthPixels / dragDivider
+                if (
+                    horizontalPos == HorizontalPosition.Left && !child?.canScrollHorizontally(1)!!
+                ) {
                     onLeftSwiped.invoke()
                 } else {
                     rightBeingSwiped.invoke(overscroll / totalDragDistance)
@@ -200,32 +217,40 @@ class Swipy @JvmOverloads constructor(
     }
 
     private fun finishSpinner(overscrollDistance: Float) {
-    if (vertical) {
-        val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
-        val swipeDistance = abs(overscrollDistance - initialMotion)
-        if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
-            isSwipeInProgress = true
-            handler.postDelayed({
-                if (verticalPos == VerticalPosition.Top)
-                    onTopSwiped.invoke()
-                else
-                    onBottomSwiped.invoke()
-                isSwipeInProgress = false
-            }, 100) // 100ms delay
-        }
-    } else {
-        val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
-        val swipeDistance = abs(overscrollDistance - initialMotion)
-        if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
-            isSwipeInProgress = true
-            handler.postDelayed({
-                if (horizontalPos == HorizontalPosition.Left && !child?.canScrollHorizontally(1)!!) {
-                    onLeftSwiped.invoke()
-                } else {
-                    onRightSwiped.invoke()
-                }
-                isSwipeInProgress = false
-            }, 100) // 100ms delay
+        if (vertical) {
+            val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
+            val swipeDistance = abs(overscrollDistance - initialMotion)
+            if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
+                isSwipeInProgress = true
+                handler.postDelayed(
+                    {
+                        if (verticalPos == VerticalPosition.Top) onTopSwiped.invoke()
+                        else onBottomSwiped.invoke()
+                        isSwipeInProgress = false
+                    },
+                    100
+                ) // 100ms delay
+            }
+        } else {
+            val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
+            val swipeDistance = abs(overscrollDistance - initialMotion)
+            if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
+                isSwipeInProgress = true
+                handler.postDelayed(
+                    {
+                        if (
+                            horizontalPos == HorizontalPosition.Left &&
+                                !child?.canScrollHorizontally(1)!!
+                        ) {
+                            onLeftSwiped.invoke()
+                        } else {
+                            onRightSwiped.invoke()
+                        }
+                        isSwipeInProgress = false
+                    },
+                    100
+                ) // 100ms delay
+            }
         }
     }
 }
