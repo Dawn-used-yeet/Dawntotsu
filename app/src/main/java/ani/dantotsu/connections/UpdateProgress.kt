@@ -18,22 +18,33 @@ fun updateProgress(media: Media, number: String) {
     if (!incognito) {
         if (Anilist.userid != null) {
             CoroutineScope(Dispatchers.IO).launch {
-                val a = number.toFloatOrNull()?.toInt()
-                if ((a ?: 0) > (media.userProgress ?: -1)) {
+                val newProgress = number.toFloatOrNull()?.toInt() ?: 0
+
+                // Update Anilist and MAL if progress has increased or if the entry is being removed
+                if (newProgress > (media.userProgress ?: -1) || newProgress == 0) {
                     Anilist.mutation.editList(
                         media.id,
-                        a,
+                        newProgress,
                         status = if (media.userStatus == "REPEATING") media.userStatus else "CURRENT"
                     )
+
                     MAL.query.editList(
                         media.idMAL,
                         media.anime != null,
-                        a, null,
+                        newProgress,
+                        null,
                         if (media.userStatus == "REPEATING") media.userStatus!! else "CURRENT"
                     )
-                    toast(currContext()?.getString(R.string.setting_progress, a))
+
+                    if (newProgress == 0) {
+                        // Remove the entry from MAL if progress is set to 0
+                        MAL.query.deleteList(media.anime != null, media.idMAL)
+                    }
+
+                    toast(currContext()?.getString(R.string.setting_progress, newProgress))
                 }
-                media.userProgress = a
+
+                media.userProgress = newProgress
                 Refresh.all()
             }
         } else {
