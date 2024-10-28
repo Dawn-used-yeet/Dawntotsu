@@ -183,7 +183,7 @@ class Swipy @JvmOverloads constructor(
         }
     }
 
-    private fun reset Swipes() {
+    private fun resetSwipes() {
         if (vertical) {
             topBeingSwiped.invoke(0f)
             bottomBeingSwiped.invoke(0f)
