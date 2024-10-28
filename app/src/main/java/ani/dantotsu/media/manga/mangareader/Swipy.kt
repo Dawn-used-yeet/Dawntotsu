@@ -81,9 +81,12 @@ class Swipy @JvmOverloads constructor(
     }
 
     private fun canChildScroll(): Boolean {
-        setChildPosition()
-        return if (vertical) verticalPos == VerticalPosition.None
-        else horizontalPos == HorizontalPosition.None
+        child?.let {
+            val childHeight = it.height
+            val visibleHeight = Resources.getSystem().displayMetrics.heightPixels
+            return if (vertical) childHeight > visibleHeight else it.width > visibleHeight
+        }
+        return true // If no child, assume scrollable
     }
 
     private fun onSecondaryPointerUp(ev: MotionEvent) {
@@ -169,16 +172,19 @@ class Swipy @JvmOverloads constructor(
             parent.requestDisallowInterceptTouchEvent(true)
             if (vertical) {
                 val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
-                if (verticalPos == VerticalPosition.Top)
-                    topBeingSwiped.invoke(overscroll * 2 / totalDragDistance)
-                else
+                // Check if on last page
+                if (verticalPos == VerticalPosition.Top && !child?.canScrollVertically(1)!!) {
+                    onTopSwiped.invoke()
+                } else {
                     bottomBeingSwiped.invoke(overscroll * 2 / totalDragDistance)
+                }
             } else {
                 val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
-                if (horizontalPos == HorizontalPosition.Left)
-                    leftBeingSwiped.invoke(overscroll / totalDragDistance)
-                else
+                if (horizontalPos == HorizontalPosition.Left && !child?.canScrollHorizontally(1)!!) {
+                    onLeftSwiped.invoke()
+                } else {
                     rightBeingSwiped.invoke(overscroll / totalDragDistance)
+                }
             }
         }
     }
@@ -194,32 +200,32 @@ class Swipy @JvmOverloads constructor(
     }
 
     private fun finishSpinner(overscrollDistance: Float) {
-        if (vertical) {
-            val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
-            val swipeDistance = abs(overscrollDistance - initialMotion)
-            if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
-                isSwipeInProgress = true
-                handler.postDelayed({
-                    if (verticalPos == VerticalPosition.Top)
-                        onTopSwiped.invoke()
-                    else
-                        onBottomSwiped.invoke()
-                    isSwipeInProgress = false
-                }, 100) // 100ms delay
-            }
-        } else {
-            val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
-            val swipeDistance = abs(overscrollDistance - initialMotion)
-            if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
-                isSwipeInProgress = true
-                handler.postDelayed({
-                    if (horizontalPos == HorizontalPosition.Left)
-                        onLeftSwiped.invoke()
-                    else
-                        onRightSwiped.invoke()
-                    isSwipeInProgress = false
-                }, 100) // 100ms delay
-            }
+    if (vertical) {
+        val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
+        val swipeDistance = abs(overscrollDistance - initialMotion)
+        if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
+            isSwipeInProgress = true
+            handler.postDelayed({
+                if (verticalPos == VerticalPosition.Top)
+                    onTopSwiped.invoke()
+                else
+                    onBottomSwiped.invoke()
+                isSwipeInProgress = false
+            }, 100) // 100ms delay
+        }
+    } else {
+        val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
+        val swipeDistance = abs(overscrollDistance - initialMotion)
+        if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
+            isSwipeInProgress = true
+            handler.postDelayed({
+                if (horizontalPos == HorizontalPosition.Left && !child?.canScrollHorizontally(1)!!) {
+                    onLeftSwiped.invoke()
+                } else {
+                    onRightSwiped.invoke()
+                }
+                isSwipeInProgress = false
+            }, 100) // 100ms delay
         }
     }
 }
