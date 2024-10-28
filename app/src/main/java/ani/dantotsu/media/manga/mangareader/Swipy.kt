@@ -3,6 +3,8 @@ package ani.dantotsu.media.manga.mangareader
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Resources
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -44,6 +46,9 @@ class Swipy @JvmOverloads constructor(
 
     private var horizontalPos = HorizontalPosition.None
     private var verticalPos = VerticalPosition.None
+
+    private var isSwipeInProgress = false
+    private val handler = Handler(Looper.getMainLooper())
 
     private fun setChildPosition() {
         child?.let {
@@ -160,7 +165,7 @@ class Swipy @JvmOverloads constructor(
 
     private fun handleDrag(pos: Float) {
         val overscroll = (pos - initialMotion) * DRAG_RATE
-        if (overscroll > 0) {  // Keep this check
+        if (overscroll > 0) {
             parent.requestDisallowInterceptTouchEvent(true)
             if (vertical) {
                 val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
@@ -178,34 +183,42 @@ class Swipy @JvmOverloads constructor(
         }
     }
 
-    private fun resetSwipes() {
+    private fun reset Swipes() {
         if (vertical) {
             topBeingSwiped.invoke(0f)
             bottomBeingSwiped.invoke(0f)
         } else {
-            rightBeingSwiped.invoke( 0f)
+            rightBeingSwiped.invoke(0f)
             leftBeingSwiped.invoke(0f)
         }
     }
-    
+
     private fun finishSpinner(overscrollDistance: Float) {
         if (vertical) {
             val totalDragDistance = Resources.getSystem().displayMetrics.heightPixels / dragDivider
             val swipeDistance = abs(overscrollDistance - initialMotion)
-            if (swipeDistance > totalDragDistance) {
-                if (verticalPos == VerticalPosition.Top)
-                    onTopSwiped.invoke()
-                else
-                    onBottomSwiped.invoke()
+            if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
+                isSwipeInProgress = true
+                handler.postDelayed({
+                    if (verticalPos == VerticalPosition.Top)
+                        onTopSwiped.invoke()
+                    else
+                        onBottomSwiped.invoke()
+                    isSwipeInProgress = false
+                }, 100) // 100ms delay
             }
         } else {
             val totalDragDistance = Resources.getSystem().displayMetrics.widthPixels / dragDivider
             val swipeDistance = abs(overscrollDistance - initialMotion)
-            if (swipeDistance > totalDragDistance) {
-                if (horizontalPos == HorizontalPosition.Left)
-                    onLeftSwiped.invoke()
-                else
-                    onRightSwiped.invoke()
+            if (swipeDistance > totalDragDistance && !isSwipeInProgress) {
+                isSwipeInProgress = true
+                handler.postDelayed({
+                    if (horizontalPos == HorizontalPosition.Left)
+                        onLeftSwiped.invoke()
+                    else
+                        onRightSwiped.invoke()
+                    isSwipeInProgress = false
+                }, 100) // 100ms delay
             }
         }
     }
