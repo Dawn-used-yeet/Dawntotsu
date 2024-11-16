@@ -16,7 +16,7 @@ class Swipy @JvmOverloads constructor(
     var dragDivider: Int = 5
     var vertical = true
 
-    // Public in case a different subchild needs to be considered
+    //public, in case a different sub child needs to be considered
     var child: View? = getChildAt(0)
 
     var topBeingSwiped: ((Float) -> Unit) = {}
@@ -58,30 +58,20 @@ class Swipy @JvmOverloads constructor(
     private fun setChildPosition() {
         child?.apply {
             if (vertical) {
-                verticalPos = when {
-                    !canScrollVertically(-1) && !canScrollVertically(1) -> {
-                        // If the content cannot scroll, default to Top or Bottom based on initialDown
-                        if (initialDown < Resources.getSystem().displayMetrics.heightPixels / 2)
-                            VerticalPosition.Top
-                        else
-                            VerticalPosition.Bottom
-                    }
-                    !canScrollVertically(-1) -> VerticalPosition.Top
-                    !canScrollVertically(1) -> VerticalPosition.Bottom
-                    else -> VerticalPosition.None
+                verticalPos = VerticalPosition.None
+                if (!canScrollVertically(1)) {
+                    verticalPos = VerticalPosition.Bottom
+                }
+                if (!canScrollVertically(-1)) {
+                    verticalPos = VerticalPosition.Top
                 }
             } else {
-                horizontalPos = when {
-                    !canScrollHorizontally(-1) && !canScrollHorizontally(1) -> {
-                        // If the content cannot scroll, default to Left or Right based on initialDown
-                        if (initialDown < Resources.getSystem().displayMetrics.widthPixels / 2)
-                            HorizontalPosition.Left
-                        else
-                            HorizontalPosition.Right
-                    }
-                    !canScrollHorizontally(-1) -> HorizontalPosition.Left
-                    !canScrollHorizontally(1) -> HorizontalPosition.Right
-                    else -> HorizontalPosition.None
+                horizontalPos = HorizontalPosition.None
+                if (!canScrollHorizontally(1)) {
+                    horizontalPos = HorizontalPosition.Right
+                }
+                if (!canScrollHorizontally(-1)) {
+                    horizontalPos = HorizontalPosition.Left
                 }
             }
         }
@@ -122,6 +112,7 @@ class Swipy @JvmOverloads constructor(
 
             MotionEvent.ACTION_MOVE -> {
                 if (activePointerId == INVALID_POINTER) {
+                    //("Got ACTION_MOVE event but don't have an active pointer id.")
                     return false
                 }
                 pointerIndex = ev.findPointerIndex(activePointerId)
@@ -157,6 +148,7 @@ class Swipy @JvmOverloads constructor(
             MotionEvent.ACTION_MOVE -> {
                 pointerIndex = ev.findPointerIndex(activePointerId)
                 if (pointerIndex < 0) {
+                    //("Got ACTION_MOVE event but have an invalid active pointer id.")
                     return false
                 }
                 val pos = if (vertical) ev.getY(pointerIndex) else ev.getX(pointerIndex)
@@ -195,6 +187,7 @@ class Swipy @JvmOverloads constructor(
             MotionEvent.ACTION_POINTER_DOWN -> {
                 pointerIndex = ev.actionIndex
                 if (pointerIndex < 0) {
+                    //("Got ACTION_POINTER_DOWN event but have an invalid action index.")
                     return false
                 }
                 activePointerId = ev.getPointerId(pointerIndex)
@@ -211,6 +204,7 @@ class Swipy @JvmOverloads constructor(
                 }
                 pointerIndex = ev.findPointerIndex(activePointerId)
                 if (pointerIndex < 0) {
+                    //("Got ACTION_UP event but don't have an active pointer id.")
                     return false
                 }
                 if (isBeingDragged) {
