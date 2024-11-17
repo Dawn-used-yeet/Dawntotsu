@@ -83,7 +83,7 @@ dependencies {
 //  FireBase
     googleImplementation platform('com.google.firebase:firebase-bom:33.6.0')
     googleImplementation 'com.google.firebase:firebase-analytics-ktx:22.0.0'
-    googleImplementation 'com.google.firebase:firebase-crashlytics-ktx:19.0.0'
+    googleImplementation 'com.google.firebase:firebase-crashlytics-ktx:19.2.1'
 //  Core
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.browser:browser:1.8.0'
