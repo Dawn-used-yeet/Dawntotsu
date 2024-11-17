@@ -130,7 +130,7 @@ dependencies {
     implementation 'com.alexvasilkov:gesture-views:2.8.3'
     implementation 'com.github.VipulOG:ebook-reader:0.1.6'
     implementation 'androidx.paging:paging-runtime-ktx:3.3.4'
-    implementation 'com.github.eltos:simpledialogfragments:v3.7'
+    implementation 'com.github.eltos:simpledialogfragments:2.2.2'
     implementation 'com.github.AAChartModel:AAChartCore-Kotlin:7.2.1'
 
 //  Markwon
