@@ -99,7 +99,7 @@ dependencies {
     implementation 'com.github.Blatzar:NiceHttp:0.4.11'
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.webkit:webkit:1.12.1'
     implementation "com.anggrayudi:storage:1.5.6"
 
 //  Glide
