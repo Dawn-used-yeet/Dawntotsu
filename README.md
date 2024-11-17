@@ -8,7 +8,7 @@
    <a href="https://discord.gg/4HPZ5nAWwM"><img src="https://img.shields.io/discord/358599430502481920.svg?style=for-the-badge&logo=discord&colorB=7289DA"></a>
 </p>
 
-# **Dantotsu** 🌟
+# **Dantotsu** 🌟awdkjshkjgfkuwaegyfsjldbaf
 
 Dantotsu is an [Anilist](https://anilist.co/) only client.
 
