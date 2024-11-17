@@ -164,7 +164,7 @@ dependencies {
     implementation 'com.squareup.okio:okio:3.9.1'
     implementation 'com.squareup.okhttp3:okhttp-brotli:5.0.0-alpha.14'
     implementation 'org.jsoup:jsoup:1.16.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.6.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.7.3'
     implementation 'com.jakewharton.rxrelay:rxrelay:1.2.0'
     implementation 'com.github.tachiyomiorg:unifile:17bec43'
     implementation 'com.github.gpanther:java-nat-sort:natural-comparator-1.1'
