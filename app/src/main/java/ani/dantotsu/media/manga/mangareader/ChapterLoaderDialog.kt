@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -47,27 +48,51 @@ class ChapterLoaderDialog : BottomSheetDialogFragment() {
                 loaded = true
                 binding.selectorAutoText.text = chp.title
                 lifecycleScope.launch(Dispatchers.IO) {
-                    if (model.loadMangaChapterImages(
-                            chp,
-                            m.selected!!
-                        )
-                    ) {
-                        val activity = currActivity()
-                        activity?.runOnUiThread {
-                            tryWith { dismiss() }
-                            if (launch) {
-                                MediaSingleton.media = m
-                                val intent = Intent(
-                                    activity,
-                                    MangaReaderActivity::class.java
-                                )//.apply { putExtra("media", m) }
-                                activity.startActivity(intent)
+                    // Load chapters from the media object
+                    val chapters = m.chapters // Assuming m.chapters is a list of MangaChapter
+                    val currentChapterIndex = chapters.indexOfFirst { it.number == chp.number }
+
+                    // Check for duplicates and skip them
+                    var nextChapterIndex = currentChapterIndex + 1
+                    while (nextChapterIndex < chapters.size && chapters[nextChapterIndex].number == chp.number) {
+                        nextChapterIndex++
+                    }
+
+                    // Ensure we do not go out of bounds
+                    if (nextChapterIndex < chapters.size) {
+                        val nextChapter = chapters[nextChapterIndex]
+                        if (model.loadMangaChapterImages(nextChapter, m.selected!!)) {
+                            val activity = currActivity()
+                            activity?.runOnUiThread {
+                                tryWith { dismiss() }
+                                if (launch) {
+                                    MediaSingleton.media = m
+                                    val intent = Intent(
+                                        activity,
+                                        MangaReaderActivity::class.java
+                                    )
+                                    activity.startActivity(intent)
+                                }
                             }
+                        }
+                    } else {
+                        // Show dialog when there are no more chapters
+                        activity?.runOnUiThread {
+                            showNoChapterDialog()
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun showNoChapterDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("No Chapter")
+            .setMessage("There are no more chapters available.")
+            .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+            .setCancelable(false)
+            .show()
     }
 
     override fun onCreateView(
