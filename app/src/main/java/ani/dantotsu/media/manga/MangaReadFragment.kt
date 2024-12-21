@@ -303,12 +303,12 @@ open class MangaReadFragment : Fragment(), ScanlatorSelectionListener {
         if (chap != null) {
             val chapters = chap.values
             for (chapter in chapters) {
-                scanlators.add(chapter.scanlator ?: "Unknown")
+                chapter.scanlator?.let { scanlators.add(it) } // Only add if scanlator is not null
             }
         }
         return scanlators.distinct()
     }
-
+    
     fun onSourceChange(i: Int): MangaParser {
         media.manga?.chapters = null
         reload()
