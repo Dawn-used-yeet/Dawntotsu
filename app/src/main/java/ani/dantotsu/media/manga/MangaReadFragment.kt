@@ -260,9 +260,6 @@ open class MangaReadFragment : Fragment(), ScanlatorSelectionListener {
             val chapters = loadedChapters[media.selected!!.sourceIndex]
             if (chapters != null) {
                 headerAdapter.options = getScanlators(chapters)
-                val filteredChapters = chapters.filterNot { (_, chapter) ->
-                    chapter.scanlator in headerAdapter.hiddenScanlators
-                }
 
                 media.manga?.chapters = filteredChapters.toMutableMap()
 
@@ -303,10 +300,9 @@ open class MangaReadFragment : Fragment(), ScanlatorSelectionListener {
         if (chap != null) {
             val chapters = chap.values
             for (chapter in chapters) {
-                scanlators.add(chapter.scanlator ?: "Unknown")
+                chapter.scanlator?.let { scanlators.add(it) }
             }
         }
-        return scanlators.distinct()
     }
 
     fun onSourceChange(i: Int): MangaParser {
