@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.LayoutInflater
