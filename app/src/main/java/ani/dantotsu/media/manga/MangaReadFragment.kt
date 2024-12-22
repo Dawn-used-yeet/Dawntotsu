@@ -300,15 +300,28 @@ open class MangaReadFragment : Fragment(), ScanlatorSelectionListener {
 
     private fun getScanlators(chap: MutableMap<String, MangaChapter>?): List<String> {
         val scanlators = mutableListOf<String>()
+    
+        Log.d("getScanlators", "Starting to process chapters for scanlators.")
+    
         if (chap != null) {
+            Log.d("getScanlators", "Chapter map contains ${chap.size} entries.")
             val chapters = chap.values
             for (chapter in chapters) {
-                chapter.scanlator?.let { scanlators.add(it) } // Only add if scanlator is not null
+                chapter.scanlator?.let { 
+                    scanlators.add(it)
+                    Log.d("getScanlators", "Added scanlator: $it")
+                } ?: Log.d("getScanlators", "Encountered a chapter with no scanlator.")
             }
+        } else {
+            Log.w("getScanlators", "Provided chapter map is null.")
         }
-        return scanlators.distinct()
-    }
     
+        val distinctScanlators = scanlators.distinct()
+        Log.d("getScanlators", "Found ${distinctScanlators.size} distinct scanlators.")
+
+        return distinctScanlators
+    }
+
     fun onSourceChange(i: Int): MangaParser {
         media.manga?.chapters = null
         reload()
